@@ -1,0 +1,17 @@
+{
+  "name": "quiz-project",
+  "version": "1.0.0",
+  "description": "Quiz project for Building Cloud Integration course",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PuumalaTarkiainenSarajarvi/quiz-project.git"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.17.1",
+    "mongodb": "^3.3.2",
+    "react": "^16.9.0",
+    "react-scripts": "^3.1.1"
+  }
+}
