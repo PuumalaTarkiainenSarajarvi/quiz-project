@@ -16,6 +16,12 @@ app.use(bodyParser.json());
 
 var db;
 
+app.use(function(req, res, next) {
+    res.header('X-XSS-Protection', 0);
+    res.header('Access-Control-Allow-Origin', 'http://localhost:3000');
+    next();
+});
+
 // Connect to the database before starting the application server.
 mongodb.MongoClient.connect(process.env.MONGODB_URI, function (err, client) {
     if (err) {
