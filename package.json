@@ -11,7 +11,6 @@
   "dependencies": {
     "dotenv": "^8.1.0",
     "express": "^4.17.1",
-<<<<<<< HEAD
     "mongodb": "^3.3.2",
     "nodemon": "^1.19.2",
     "react": "^16.9.0",
@@ -19,8 +18,5 @@
   },
   "scripts": {
     "start": "nodemon server.js"
-=======
-    "mongodb": "^3.3.2"
->>>>>>> 7c3cb45c4d9de6d37b38fb2421bc89d717411717
   }
 }

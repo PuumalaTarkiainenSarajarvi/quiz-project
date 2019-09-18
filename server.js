@@ -25,12 +25,11 @@ function shuffle(a) {
     return a;
 }
 
-app.use(function(request, response, next) {
+app.use(function (request, response, next) {
     response.header('X-XSS-Protection', 0);
     response.header('Access-Control-Allow-Origin', 'http://localhost:3000');
     next();
 });
-
 // Connect to the database before starting the application server.
 mongodb.MongoClient.connect(process.env.MONGODB_URI, function (err, client) {
     if (err) {
@@ -43,7 +42,7 @@ mongodb.MongoClient.connect(process.env.MONGODB_URI, function (err, client) {
     console.log("Database connection ready");
 
     // Initialize the app.
-    var server = app.listen(process.env.PORT || 8080, function () {
+    var server = app.listen(process.env.PORT || 5000, function () {
         var port = server.address().port;
         console.log("App now running on port", port);
     });
@@ -55,55 +54,69 @@ function handleError(response, reason, message, code) {
     response.status(code || 500).json({ "error": message });
 }
 
-
-function validateSessionId(session_id){
-    db.collection(SESSION_COLLECTION).find({_id: new ObjectID(session_id)})
-    .toArray((err, result)=>{
-        if(result &&result.length > 0){
-            console.log(result[0])
-        }
-        else{
-            console.log("ID INVALID")
-        }
+function validateSessionId(session_id) {
+    return new Promise(function (resolve, reject) {
+        db.collection(SESSION_COLLECTION).find({ _id: new ObjectID(session_id) })
+            .toArray((err, result) => {
+                if (result && result.length > 0) {
+                    console.log("ID FOUND")
+                    resolve(true)
+                }
+                else {
+                    console.log("ID NOT FOUND")
+                    resolve(false)
+                }
+            })
     })
 }
 
 
 
-app.post("/api/check_correct_answer", function (request, response) {
-    //var session_id = request.body.session_id
-    //validateSessionId(session_id)
+app.post("/api/check_correct_answer", async function (request, response) {
+
+    var session_id = request.body.session_id
     var _id = request.body._id
-    var correct_answer = request.body.correct_answer
-    console.log("ID ",_id)
-    db.collection(QUESTIONS_COLLECTION).findOne(
-        {
-            _id: new ObjectID(_id)
-        }, function(err, result){
-        if(err) handleError(response, err.message, "Failed to check correct answer")
-        else{
-            if(result.correct_answer === correct_answer)response.status(200).json("true")
-            else response.status(200).json("false")
+    validateSessionId(session_id).then(function (data) {
+        if (data) {
+            console.log("VALIDATION", data)
+            var correct_answer = request.body.correct_answer
+            console.log("ID ", _id)
+            db.collection(QUESTIONS_COLLECTION).findOne(
+                {
+                    _id: new ObjectID(_id)
+                }, function (err, result) {
+                    console.log("RESULT", result)
+                    if (err) handleError(response, err.message, "Failed to check correct answer")
+                    else {
+                        if (result.correct_answer === correct_answer) response.status(200).json("true")
+                        else return response.status(200).json("false")
+                    }
+                });
         }
-    });
+        else{
+            response.status(401).send("Authentication failed")
+        }
+
+    })
+
 });
 
 app.get("/api/get_random_question", function (request, response) {
-    db.collection(QUESTIONS_COLLECTION).aggregate([{$sample: {size: 1}}]).toArray(function(err, result){
-        if(err){
+    db.collection(QUESTIONS_COLLECTION).aggregate([{ $sample: { size: 1 } }]).toArray(function (err, result) {
+        if (err) {
             handleError(response, err.message, "Failed to get random question")
         }
-        else{
+        else {
             let answers = [result[0].correct_answer, result[0].incorrect_answers[0], result[0].incorrect_answers[1], result[0].incorrect_answers[2]]
             answers = shuffle(answers)
-            const response = {
+            const responseData = {
                 _id: result[0]._id,
                 category: result[0].category,
                 difficulty: result[0].difficulty,
                 question: result[0].question,
                 answers
             }
-            response.status(200).json(response)
+            response.status(200).json(responseData)
         }
     });
 });
