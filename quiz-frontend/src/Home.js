@@ -1,19 +1,41 @@
 import React, { Component } from "react"
+import {Button} from 'react-bootstrap';
+import './home.css';
 
 class Home extends Component {
-    constructor() {
-        super()
+    constructor(props) {
+        super(props);
         this.state = {
-            text: undefined
+            emailInput: undefined,
+            showHighScorePopup: false,
         }
     }
 
     componentDidMount() {
-        this.fetchData()
+        //this.fetchData()
+    }
+
+    renderButtons() {
+        return(
+            <div className={"homeButtons"}>
+                <Button variant={"outline-success"} size={"lg"} block  onClick={(e) => this.startGame(e)}>Play</Button>
+                <Button variant={"outline-info"} size={"lg"} block className={"highScoresButton"} onClick={(e) => this.showHighScores(e)}>HighScores</Button>
+
+            </div>
+        )
+    }
+
+    showHighScores() {
+        console.log("HighScores");
+    }
+
+    startGame() {
+        console.log("StartGamed");
+        this.props.history.push('/quizgame');
     }
 
     fetchData() {
-        var urlAddress = "http://localhost:8080/api/get_all_high_scores"
+        let urlAddress = "http://localhost:8080/api/get_all_high_scores";
         fetch(urlAddress, {
             method: 'GET',
             headers: {
@@ -34,8 +56,9 @@ class Home extends Component {
 
     render() {
         return (
-           <div>
-
+           <div className={"outer"}>
+               <h1 className={"homeTitle"}>QUIZ GAME</h1>
+               {this.renderButtons()}
            </div>
         )
     }

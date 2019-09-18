@@ -1,0 +1,39 @@
+.outer{
+    padding: 4vw 4vw;
+}
+.homeTitle {
+    font-family: "Comic Sans MS", cursive, sans-serif;
+    font-size: 50px;
+    letter-spacing: 0;
+    word-spacing: 0.4px;
+    color: #000000;
+    font-weight: 700;
+    text-decoration: none solid rgb(68, 68, 68);
+    font-style: italic;
+    font-variant: small-caps;
+    text-transform: uppercase;
+    text-align: center;
+    margin-bottom: 3rem;
+
+}
+
+.homeButtons {
+    margin-left: 3rem;
+    margin-right: 3rem;
+}
+.homeButtons .btn {
+    margin: 0 auto;
+    max-width: 30rem;
+
+}
+.homeButtons .btn-block {
+    width: 20rem;
+}
+
+.homeButtons .btn-block+.btn-block {
+    margin-top: 1rem;
+}
+
+.btn-block {
+    width: 50%;
+}
