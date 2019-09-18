@@ -4,7 +4,7 @@ import { Redirect } from "react-router-dom";
 class ClockForGame extends Component {
     constructor(props){
         super(props);
-        this.state = {currentCount: 5}
+        this.state = {currentCount: 10}
     }
     timer() {
         this.setState({
