@@ -96,14 +96,14 @@ app.get("/api/get_random_question", function (request, response) {
         else{
             let answers = [result[0].correct_answer, result[0].incorrect_answers[0], result[0].incorrect_answers[1], result[0].incorrect_answers[2]]
             answers = shuffle(answers)
-            const response = {
+            const responseData = {
                 _id: result[0]._id,
                 category: result[0].category,
                 difficulty: result[0].difficulty,
                 question: result[0].question,
                 answers
             }
-            response.status(200).json(response)
+            response.status(200).json(responseData)
         }
     });
 });
