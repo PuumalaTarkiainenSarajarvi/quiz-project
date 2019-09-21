@@ -69,6 +69,50 @@ function validateSessionId(session_id) {
             })
     })
 }
+function updateScores(difficulty, status, session_id) {
+    return new Promise(function (resolve, reject) {
+        var score = 0;
+
+        switch (difficulty) {
+            case "easy":
+                if (status) score = 5
+                else if (!status) score = -15
+                console.log("Question was ", difficulty, " user was ", status, " rewarding ", score)
+                break;
+            case "medium":
+                if (status) score = 10
+                else if (!status) score = -10
+                console.log("Question was ", difficulty, " user was ", status, " rewarding ", score)
+                break;
+            case "hard":One
+                if (status) score = 15
+                else if (!status) score = -5
+                console.log("Question was ", difficulty, " user was ", status, " rewarding ", score)
+                break;
+        }
+        db.collection(SESSION_COLLECTION).findOne(
+            {
+                _id: new ObjectID(session_id)
+            }, function (err, result) {
+                console.log("SESSION RESULT", result)
+                if (err) handleError(response, err.message, "Failed to get session data")
+                else if(!Number.isInteger(result.current_score)) reject("Current score is corrupted")
+                else {
+                    var newScore = result.current_score + score
+                    console.log("NEW SCORE", newScore)
+                    db.collection(SESSION_COLLECTION).update({ _id: new ObjectID(session_id) }, { current_score: newScore }, () => {
+                        console.log("RETURNING SCORE ", newScore)
+                        resolve(newScore)
+                    })
+
+                }
+            }
+        );
+    });
+
+}
+
+
 
 
 
@@ -80,6 +124,7 @@ app.post("/api/check_correct_answer", async function (request, response) {
         if (data) {
             console.log("VALIDATION", data)
             var correct_answer = request.body.correct_answer
+            var dataToReturn;
             console.log("ID ", _id)
             db.collection(QUESTIONS_COLLECTION).findOne(
                 {
@@ -88,12 +133,21 @@ app.post("/api/check_correct_answer", async function (request, response) {
                     console.log("RESULT", result)
                     if (err) handleError(response, err.message, "Failed to check correct answer")
                     else {
-                        if (result.correct_answer === correct_answer) response.status(200).json("true")
-                        else return response.status(200).json("false")
+                        if (result.correct_answer === correct_answer) dataToReturn = { status: "true" }
+
+                        else dataToReturn = { status: "false" }
+
+                        updateScores(result.difficulty, dataToReturn.status, session_id).then((data) => {
+                            dataToReturn.current_score = data
+                            console.log("THIS DATA WILL BE RETURNED", dataToReturn)
+                            response.status(200).json(dataToReturn)
+                        })
+
                     }
-                });
+                }
+            );
         }
-        else{
+        else {
             response.status(401).send("Authentication failed")
         }
 
@@ -139,6 +193,16 @@ app.get("/api/get_personal_bests", function (request, response) {
     // return personal bests
 });
 
-app.put("/api/start_game_session", function (request, response) {
-
+app.put("/api/start_game_session", async function (request, response) {
+    db.collection(SESSION_COLLECTION).insertOne({_id: new ObjectID(),current_score: 0},(err, result)=>{
+        if(result){
+            var dataToReturn = {
+                session_id: result.insertedId
+            }
+            response.status(200).json(dataToReturn)
+        }
+        else if(err){
+            handleError(response, err.message, "Failed to start new game")
+        }
+    });
 });
