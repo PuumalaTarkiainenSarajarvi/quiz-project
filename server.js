@@ -28,6 +28,7 @@ function shuffle(a) {
 app.use(function (request, response, next) {
     response.header('X-XSS-Protection', 0);
     response.header('Access-Control-Allow-Origin', 'http://localhost:3000');
+    response.header('Access-Control-Allow-Headers', 'Content-Type');
     next();
 });
 // Connect to the database before starting the application server.

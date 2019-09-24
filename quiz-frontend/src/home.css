@@ -1,3 +1,11 @@
+* {
+    background: url("./img/quiz-sign-wooden-table-made-wood.jpg") no-repeat center center fixed;
+    -webkit-background-size: cover;
+    -moz-background-size: cover;
+    -o-background-size: cover;
+    background-size: cover;
+}
+
 .outer{
     padding: 4vw 4vw;
 }
