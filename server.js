@@ -84,7 +84,7 @@ function updateScores(difficulty, status, session_id) {
                 else if (!status) score = -10
                 console.log("Question was ", difficulty, " user was ", status, " rewarding ", score)
                 break;
-            case "hard":One
+            case "hard": One
                 if (status) score = 15
                 else if (!status) score = -5
                 console.log("Question was ", difficulty, " user was ", status, " rewarding ", score)
@@ -96,7 +96,7 @@ function updateScores(difficulty, status, session_id) {
             }, function (err, result) {
                 console.log("SESSION RESULT", result)
                 if (err) handleError(response, err.message, "Failed to get session data")
-                else if(!Number.isInteger(result.current_score)) reject("Current score is corrupted")
+                else if (!Number.isInteger(result.current_score)) reject("Current score is corrupted")
                 else {
                     var newScore = result.current_score + score
                     console.log("NEW SCORE", newScore)
@@ -175,8 +175,73 @@ app.get("/api/get_random_question", function (request, response) {
     });
 });
 
-app.put("/api/put_high_score_info", function (request, response) {
-    // put high score
+app.post("/api/post_high_score_info", async function (request, response) {
+    var session_id = request.body.session_id
+    var email = request.body.email
+    var nickname = request.body.nickname
+    var score;
+
+    var getCurrentScore = new Promise((resolve, reject) => {
+        db.collection(SESSION_COLLECTION).findOne(
+            {
+                _id: new ObjectID(session_id)
+            }, function (err, result) {
+                if (err) {
+                    handleError(response, err.message, "Failed to check correct answer")
+                    reject()
+                }
+
+                else {
+                    score = result.current_score
+                    resolve(score)
+                }
+            }
+        )
+    });
+    getCurrentScore.then((score) => {
+        db.collection(HIGH_SCORES_COLLECTION).findOne({email: email}, function(err, result){
+            if(err){
+                handleError(err)
+            } 
+            else if(result != null){
+                console.log("TEN BEST SCORES",result.tenBestScores)
+                var smallestScore;
+                var smallestIndex;
+                var newScoreArray = result.tenBestScores
+                newScoreArray.forEach((arrayScore, index)=>{
+                    if(smallestScore === undefined){
+                        smallestScore =  arrayScore.score
+                        smallestIndex = index
+                    }
+                    if(smallestScore > arrayScore.score){
+                        smallestScore = arrayScore.score
+                        smallestIndex = index
+                    }
+                    
+                });
+                console.log("SMALLEST SCORE IS",smallestScore,"Scores index is",smallestIndex)
+                newScoreArray[smallestIndex].score = score
+                db.collection(HIGH_SCORES_COLLECTION).updateOne(
+                    {email: email},
+                    {$set:{tenBestScores: newScoreArray}}, (err, res)=>{
+                        if(err) handleError(err.message)
+                        else{
+                            console.log("NEW SCORE INSERTED",newScoreArray,"result",res.result)
+                            response.status(200).send("Succesfully updated high scores")
+                        }
+                        });
+
+                
+            }
+            else{
+                response.status(404).send("No such email")
+            }
+        });
+    })
+        .catch((err) => {
+            console.log(err)
+        });
+
 });
 
 app.get("/api/get_all_high_scores", function (request, response) {
@@ -193,15 +258,15 @@ app.get("/api/get_personal_bests", function (request, response) {
     // return personal bests
 });
 
-app.put("/api/start_game_session", async function (request, response) {
-    db.collection(SESSION_COLLECTION).insertOne({_id: new ObjectID(),current_score: 0},(err, result)=>{
-        if(result){
+app.post("/api/start_game_session", async function (request, response) {
+    db.collection(SESSION_COLLECTION).insertOne({ _id: new ObjectID(), current_score: 0 }, (err, result) => {
+        if (result) {
             var dataToReturn = {
                 session_id: result.insertedId
             }
             response.status(200).json(dataToReturn)
         }
-        else if(err){
+        else if (err) {
             handleError(response, err.message, "Failed to start new game")
         }
     });
