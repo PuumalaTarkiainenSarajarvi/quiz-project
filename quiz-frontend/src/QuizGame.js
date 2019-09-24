@@ -1,6 +1,6 @@
 import React, { Component } from "react"
 import ClockForGame from "./ClockForGame";
-import {Button} from "react-bootstrap";
+import {Button, Card} from "react-bootstrap";
 
 class QuizGame extends Component {
     constructor(props) {
@@ -13,6 +13,7 @@ class QuizGame extends Component {
             answers: undefined,
             category: undefined,
             difficulty: undefined,
+            points: 0,
         }
     }
 
@@ -46,7 +47,7 @@ class QuizGame extends Component {
                    console.log("Received response", data);
 
                    this.setState({
-                       question: data.question,
+                       question: this.htmlEntities(data.question),
                        difficulty: data.difficulty,
                        answers: data.answers,
                        questionId: data._id,
@@ -58,6 +59,57 @@ class QuizGame extends Component {
                }
 
             });
+    }
+
+    async checkCorrectAnswer(itm) {
+        let jsonStr = {};
+        let body ={
+            _id: this.state.questionId,
+            correct_answer: itm
+        };
+        jsonStr['_id'] = this.state.questionId;
+        jsonStr['correct_answer'] = itm;
+        console.log(jsonStr);
+        await this.checkJsonObjectFromApi(body);
+        this.newQuestion();
+    }
+
+    checkJsonObjectFromApi(jsonStr) {
+        console.log(jsonStr);
+        let urlAddress = "http://localhost:8080/api/check_correct_answer";
+        fetch(urlAddress, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+
+            },
+            body: JSON.stringify(jsonStr)
+        })
+            .then(function (response) {
+                if (!response.ok) {
+                    throw Error(response.statusText);
+                }
+                return response;
+            })
+            .then(response => response.json())
+            .then(data => {
+                this.markCorrectWrongForUser(data)
+            })
+    }
+
+    markCorrectWrongForUser(data) {
+        if(data) {
+            let points = this.state.points;
+            if(data === "true") {
+                points = points + 5;
+            }
+            if(data === "false") {
+                points = points - 1;
+            }
+            this.setState({
+                points: points
+            });
+        }
     }
 
     htmlEntities(encodedString) {
@@ -79,14 +131,29 @@ class QuizGame extends Component {
 
     getQuestionContent() {
         return(<div>
-
-            <p>{this.state.difficulty}</p>
-            <br/>
-            <p>{this.state.category}</p>
-            <br/>
-            <h1>{this.htmlEntities(this.state.question)}</h1>
+            <Card style={{ width: '25rem', height: '350px', margin: '0 auto', padding: '2rem' }}>
+                <Card.Body>
+                    <Card.Title>{this.state.question}</Card.Title>
+                    <Card.Subtitle className="mb-2 text-muted">Category: {this.state.category}</Card.Subtitle>
+                    <Card.Text>
+                        Difficulty: {this.state.difficulty}
+                    </Card.Text>
+                    <Card.Text>
+                        Points: {this.state.points}
+                    </Card.Text>
+                </Card.Body>
+            </Card>
 
         </div>)
+    }
+
+    getAnswerData() {
+        if(this.state.answers) {
+            return this.state.answers.map((itm, i) => {
+               return(<Button key={i} variant={"outline-success"} size={"sm"} block  onClick={() => this.checkCorrectAnswer(itm)}>{itm}</Button>)
+            });
+        }
+        console.log(this.state.answers);
     }
 
     newQuestion() {
@@ -104,10 +171,12 @@ class QuizGame extends Component {
         }
         return (
             <div>
-                <h1>Quiz Game</h1>
-                <ClockForGame />
+                <h1 className={"quizH"}>Quiz Game</h1>
                 {this.getQuestionContent()}
-                <Button variant={"outline-success"} size={"lg"} block  onClick={(e) => this.newQuestion(e)}>New</Button>
+                <ClockForGame />
+                <div className={"gameAnswerButtons"}>
+                {this.getAnswerData()}
+                </div>
             </div>
         )
     }

@@ -1,14 +1,26 @@
 import React, { Component } from 'react';
 import { Redirect } from "react-router-dom";
+import './quizgame.css';
 
 class ClockForGame extends Component {
+    maximumTime = 60;
     constructor(props){
         super(props);
-        this.state = {currentCount: 10}
+        this.state = {
+            currentCount: 60,
+            percentageCount: 100
+        }
+    }
+    countPercentage(count) {
+        count = ((count / this.maximumTime) * 100);
+        return count;
     }
     timer() {
+        let currentCount = this.state.currentCount;
+        currentCount = currentCount - 1;
         this.setState({
-            currentCount: this.state.currentCount - 1
+            currentCount: currentCount,
+            percentageCount: this.countPercentage(currentCount)
         });
         if(this.state.currentCount < 1) {
             clearInterval(this.intervalId);
@@ -23,9 +35,7 @@ class ClockForGame extends Component {
 
     timerDiv() {
         if(this.state.currentCount > 0) {
-        return(
-            <div>{this.state.currentCount}</div>
-        );
+
         } else {
             return <Redirect to={'/'}/>
         }
@@ -33,8 +43,9 @@ class ClockForGame extends Component {
 
     render() {
         return(
-            <div>
-            {this.timerDiv()}
+            <div className={"progressBar"}>
+                {this.timerDiv()}
+                <div className={"filler"} style={{ width: `${this.state.percentageCount}%`}} />
             </div>
             );
     }

@@ -28,6 +28,7 @@ function shuffle(a) {
 app.use(function(request, response, next) {
     response.header('X-XSS-Protection', 0);
     response.header('Access-Control-Allow-Origin', 'http://localhost:3000');
+    response.header('Access-Control-Allow-Headers', 'Content-Type');
     next();
 });
 
@@ -73,6 +74,7 @@ function validateSessionId(session_id){
 app.post("/api/check_correct_answer", function (request, response) {
     //var session_id = request.body.session_id
     //validateSessionId(session_id)
+    console.log("REQUEST", request);
     var _id = request.body._id
     var correct_answer = request.body.correct_answer
     console.log("ID ",_id)
@@ -80,6 +82,7 @@ app.post("/api/check_correct_answer", function (request, response) {
         {
             _id: new ObjectID(_id)
         }, function(err, result){
+            console.log(" RESULT", result);
         if(err) handleError(response, err.message, "Failed to check correct answer")
         else{
             if(result.correct_answer === correct_answer)response.status(200).json("true")
