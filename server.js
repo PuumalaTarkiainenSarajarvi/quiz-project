@@ -25,13 +25,12 @@ function shuffle(a) {
     return a;
 }
 
-app.use(function(request, response, next) {
+app.use(function (request, response, next) {
     response.header('X-XSS-Protection', 0);
     response.header('Access-Control-Allow-Origin', 'http://localhost:3000');
     response.header('Access-Control-Allow-Headers', 'Content-Type');
     next();
 });
-
 // Connect to the database before starting the application server.
 mongodb.MongoClient.connect(process.env.MONGODB_URI, function (err, client) {
     if (err) {
@@ -44,7 +43,7 @@ mongodb.MongoClient.connect(process.env.MONGODB_URI, function (err, client) {
     console.log("Database connection ready");
 
     // Initialize the app.
-    var server = app.listen(process.env.PORT || 8080, function () {
+    var server = app.listen(process.env.PORT || 5000, function () {
         var port = server.address().port;
         console.log("App now running on port", port);
     });
@@ -56,47 +55,113 @@ function handleError(response, reason, message, code) {
     response.status(code || 500).json({ "error": message });
 }
 
-
-function validateSessionId(session_id){
-    db.collection(SESSION_COLLECTION).find({_id: new ObjectID(session_id)})
-    .toArray((err, result)=>{
-        if(result &&result.length > 0){
-            console.log(result[0])
-        }
-        else{
-            console.log("ID INVALID")
-        }
+function validateSessionId(session_id) {
+    return new Promise(function (resolve, reject) {
+        db.collection(SESSION_COLLECTION).find({ _id: new ObjectID(session_id) })
+            .toArray((err, result) => {
+                if (result && result.length > 0) {
+                    console.log("ID FOUND")
+                    resolve(true)
+                }
+                else {
+                    console.log("ID NOT FOUND")
+                    resolve(false)
+                }
+            })
     })
+}
+function updateScores(difficulty, status, session_id) {
+    return new Promise(function (resolve, reject) {
+        var score = 0;
+
+        switch (difficulty) {
+            case "easy":
+                if (status) score = 5
+                else if (!status) score = -15
+                console.log("Question was ", difficulty, " user was ", status, " rewarding ", score)
+                break;
+            case "medium":
+                if (status) score = 10
+                else if (!status) score = -10
+                console.log("Question was ", difficulty, " user was ", status, " rewarding ", score)
+                break;
+            case "hard":One
+                if (status) score = 15
+                else if (!status) score = -5
+                console.log("Question was ", difficulty, " user was ", status, " rewarding ", score)
+                break;
+        }
+        db.collection(SESSION_COLLECTION).findOne(
+            {
+                _id: new ObjectID(session_id)
+            }, function (err, result) {
+                console.log("SESSION RESULT", result)
+                if (err) handleError(response, err.message, "Failed to get session data")
+                else if(!Number.isInteger(result.current_score)) reject("Current score is corrupted")
+                else {
+                    var newScore = result.current_score + score
+                    console.log("NEW SCORE", newScore)
+                    db.collection(SESSION_COLLECTION).update({ _id: new ObjectID(session_id) }, { current_score: newScore }, () => {
+                        console.log("RETURNING SCORE ", newScore)
+                        resolve(newScore)
+                    })
+
+                }
+            }
+        );
+    });
+
 }
 
 
 
-app.post("/api/check_correct_answer", function (request, response) {
-    //var session_id = request.body.session_id
-    //validateSessionId(session_id)
-    console.log("REQUEST", request);
+
+
+app.post("/api/check_correct_answer", async function (request, response) {
+
+    var session_id = request.body.session_id
     var _id = request.body._id
-    var correct_answer = request.body.correct_answer
-    console.log("ID ",_id)
-    db.collection(QUESTIONS_COLLECTION).findOne(
-        {
-            _id: new ObjectID(_id)
-        }, function(err, result){
-            console.log(" RESULT", result);
-        if(err) handleError(response, err.message, "Failed to check correct answer")
-        else{
-            if(result.correct_answer === correct_answer)response.status(200).json("true")
-            else response.status(200).json("false")
+    validateSessionId(session_id).then(function (data) {
+        if (data) {
+            console.log("VALIDATION", data)
+            var correct_answer = request.body.correct_answer
+            var dataToReturn;
+            console.log("ID ", _id)
+            db.collection(QUESTIONS_COLLECTION).findOne(
+                {
+                    _id: new ObjectID(_id)
+                }, function (err, result) {
+                    console.log("RESULT", result)
+                    if (err) handleError(response, err.message, "Failed to check correct answer")
+                    else {
+                        if (result.correct_answer === correct_answer) dataToReturn = { status: "true" }
+
+                        else dataToReturn = { status: "false" }
+
+                        updateScores(result.difficulty, dataToReturn.status, session_id).then((data) => {
+                            dataToReturn.current_score = data
+                            console.log("THIS DATA WILL BE RETURNED", dataToReturn)
+                            response.status(200).json(dataToReturn)
+                        })
+
+                    }
+                }
+            );
         }
-    });
+        else {
+            response.status(401).send("Authentication failed")
+        }
+
+    })
+
 });
 
 app.get("/api/get_random_question", function (request, response) {
-    db.collection(QUESTIONS_COLLECTION).aggregate([{$sample: {size: 1}}]).toArray(function(err, result){
-        if(err){
+    db.collection(QUESTIONS_COLLECTION).aggregate([{ $sample: { size: 1 } }]).toArray(function (err, result) {
+        if (err) {
             handleError(response, err.message, "Failed to get random question")
         }
-        else{
+        else {
             let answers = [result[0].correct_answer, result[0].incorrect_answers[0], result[0].incorrect_answers[1], result[0].incorrect_answers[2]]
             answers = shuffle(answers)
             const responseData = {
@@ -129,6 +194,16 @@ app.get("/api/get_personal_bests", function (request, response) {
     // return personal bests
 });
 
-app.put("/api/start_game_session", function (request, response) {
-
+app.put("/api/start_game_session", async function (request, response) {
+    db.collection(SESSION_COLLECTION).insertOne({_id: new ObjectID(),current_score: 0},(err, result)=>{
+        if(result){
+            var dataToReturn = {
+                session_id: result.insertedId
+            }
+            response.status(200).json(dataToReturn)
+        }
+        else if(err){
+            handleError(response, err.message, "Failed to start new game")
+        }
+    });
 });
