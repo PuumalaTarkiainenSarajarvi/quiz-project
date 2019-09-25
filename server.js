@@ -4,6 +4,7 @@ const { check, validationResult } = require('express-validator');
 
 var express = require("express");
 var bodyParser = require("body-parser");
+var cookieParser = require('cookie-parser')
 var mongodb = require("mongodb");
 var ObjectID = mongodb.ObjectID;
 
@@ -15,6 +16,7 @@ var SESSION_COLLECTION = "session";
 
 var app = express();
 app.use(bodyParser.json());
+app.use(cookieParser())
 
 var db;
 
@@ -33,6 +35,7 @@ app.use(function (request, response, next) {
     response.header('Access-Control-Allow-Headers', 'Content-Type');
     next();
 });
+
 // Connect to the database before starting the application server.
 mongodb.MongoClient.connect(process.env.MONGODB_URI, function (err, client) {
     if (err) {
@@ -45,7 +48,7 @@ mongodb.MongoClient.connect(process.env.MONGODB_URI, function (err, client) {
     console.log("Database connection ready");
 
     // Initialize the app.
-    var server = app.listen(process.env.PORT || 5000, function () {
+    var server = app.listen(process.env.PORT || 6000, function () {
         var port = server.address().port;
         console.log("App now running on port", port);
     });
@@ -107,12 +110,41 @@ function updateScores(difficulty, status, session_id) {
 
 }
 
+app.get("/api/get_all_high_scores", function (request, response) {
+    db.collection(HIGH_SCORES_COLLECTION).find({},{fields:{nickname: 1, tenBestScores: 1, _id: 0}}).toArray(function (err, docs) {
+        if (err) {
+            handleError(response, err.message, "Failed to get high scores.");
+        } else {
+            response.status(200).json(docs)
+        }
+    });
+});
 
+app.post("/api/start_game_session", async function (request, response) {
+    db.collection(SESSION_COLLECTION).insertOne({ _id: new ObjectID(), current_score: 0 }, (err, result) => {
+        if (result) {
+            var dataToReturn = {
+                session_id: result.insertedId
+            }
+            response.cookie('session_id', result.insertedId,{maxAge: 120000, httpOnly:true})
+            response.status(200).json(dataToReturn)
+        }
+        else if (err) {
+            handleError(response, err.message, "Failed to start new game")
+        }
+    });
+});
 
-
+app.use(function(req,res,next){
+    if(!req.headers.authorization){
+        
+        return res.status(403).json("No authorization header")
+    }
+    console.log("AUTHORIZATION HEADER",req.headers.authorization)
+    next();
+});
 
 app.post("/api/check_correct_answer",[
-    check('session_id').isLength({ min: 24, max: 24 }),
     check('question_id').isLength({ min: 24, max: 24 }),
     check('correct_answer').isString()
 ], async function (request, response) {
@@ -122,7 +154,7 @@ app.post("/api/check_correct_answer",[
         return response.status(422).json({ errors: errors.array() })
     }
 
-    var session_id = request.body.session_id
+    var session_id = request.headers.authorization
     var _id = request.body.question_id
     validateSessionId(session_id).then(function (data) {
         if (data) {
@@ -166,7 +198,7 @@ app.get("/api/get_random_question",[
         return response.status(422).json({ errors: errors.array() })
     }
 
-    var session_id = request.body.session_id
+    var session_id = request.headers.authorization
         validateSessionId(session_id).then(function(data){
             console.log("SESSION VALIDATED")
             if(data){
@@ -205,7 +237,7 @@ app.post("/api/post_high_score_info", [
         return response.status(422).json({ errors: errors.array() })
     }
 
-    var session_id = request.body.session_id
+    var session_id = request.headers.authorization
     var email = request.body.email
     var nickname = request.body.nickname
     var score;
@@ -297,30 +329,8 @@ app.post("/api/post_high_score_info", [
 
 });
 
-app.get("/api/get_all_high_scores", function (request, response) {
-    db.collection(HIGH_SCORES_COLLECTION).find({},{fields:{nickname: 1, tenBestScores: 1, _id: 0}}).toArray(function (err, docs) {
-        if (err) {
-            handleError(response, err.message, "Failed to get high scores.");
-        } else {
-            response.status(200).json(docs)
-        }
-    });
-});
-
 app.get("/api/get_personal_bests", function (request, response) {
     // return personal bests
 });
 
-app.post("/api/start_game_session", async function (request, response) {
-    db.collection(SESSION_COLLECTION).insertOne({ _id: new ObjectID(), current_score: 0 }, (err, result) => {
-        if (result) {
-            var dataToReturn = {
-                session_id: result.insertedId
-            }
-            response.status(200).json(dataToReturn)
-        }
-        else if (err) {
-            handleError(response, err.message, "Failed to start new game")
-        }
-    });
-});
+
