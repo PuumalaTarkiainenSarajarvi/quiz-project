@@ -33,6 +33,7 @@ app.use(function (request, response, next) {
     response.header('X-XSS-Protection', 0);
     response.header('Access-Control-Allow-Origin', 'http://localhost:3000');
     response.header('Access-Control-Allow-Headers', 'Content-Type');
+    response.header('Access-Control-Allow-Methods',  'POST, GET, PUT');
     next();
 });
 
@@ -79,16 +80,19 @@ function updateScores(difficulty, status, session_id) {
 
         switch (difficulty) {
             case "easy":
-                if (status) score = 5
-                else if (!status) score = -15
+                if (status) score = 5;
+                else if (!status) score = -15;
+                console.log("Question was ", difficulty, " user was ", status, " rewarding ", score);
                 break;
             case "medium":
-                if (status) score = 10
-                else if (!status) score = -10
+                if (status) score = 10;
+                else if (!status) score = -10;
+                console.log("Question was ", difficulty, " user was ", status, " rewarding ", score);
                 break;
-            case "hard": One
-                if (status) score = 15
-                else if (!status) score = -5
+            case "hard":
+                if (status) score = 15;
+                else if (!status) score = -5;
+                console.log("Question was ", difficulty, " user was ", status, " rewarding ", score);
                 break;
         }
         db.collection(SESSION_COLLECTION).findOne(
@@ -166,9 +170,9 @@ app.post("/api/check_correct_answer",[
                 }, function (err, result) {
                     if (err) handleError(response, err.message, "Failed to check correct answer")
                     else {
-                        if (result.correct_answer === correct_answer) dataToReturn = { status: "true" }
+                        if (result.correct_answer === correct_answer) dataToReturn = { status: true }
 
-                        else dataToReturn = { status: "false" }
+                        else dataToReturn = { status: false }
 
                         updateScores(result.difficulty, dataToReturn.status, session_id).then((data) => {
                             dataToReturn.current_score = data
@@ -329,8 +333,26 @@ app.post("/api/post_high_score_info", [
 
 });
 
-app.get("/api/get_personal_bests", function (request, response) {
-    // return personal bests
+app.post("/api/get_personal_bests", function (request, response) {
+
+    let email = request.body.email;
+    if(email) {
+    console.log("EMAILEMAIL", email);
+    db.collection(HIGH_SCORES_COLLECTION).find({ email })
+        .toArray((err, result) => {
+            if(err) {
+                handleError(response, err.message, "Failed to get high score");
+            }
+
+            if (result && result.length > 0) {
+                console.log("EMAIL FOUND", email);
+                response.status(200).json(result);
+            }
+            else {
+                response.status(404).json(result);
+            }
+        })
+    }
 });
 
 

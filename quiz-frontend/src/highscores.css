@@ -1,0 +1,12 @@
+.allTimeTableView {
+    border: 1px solid black;
+    -webkit-box-shadow: 0 10px 5px 0 rgba(0,0,0,0.75);
+    -moz-box-shadow: 0 10px 5px 0 rgba(0,0,0,0.75);
+    box-shadow: 0 10px 5px 0 rgba(0,0,0,0.75);
+}
+
+.tableHeader {
+    color: black;
+    font-size: 25px;
+    font-weight: bold;
+}

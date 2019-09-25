@@ -14,16 +14,54 @@ class QuizGame extends Component {
             category: undefined,
             difficulty: undefined,
             points: 0,
+            sessionId: undefined,
         }
     }
 
    async componentDidMount() {
-        await this.getRandomQuestion();
+        this.startGameSession();
+        this.checkIfSessionIsValid();
+    }
+
+    startGameSession() {
+        let urlAddress = "http://localhost:5000/api/start_game_session";
+        fetch(urlAddress, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+        })
+            .then(function (response) {
+                if (!response.ok) {
+                    throw Error(response.statusText);
+                }
+                return response;
+            })
+            .then(response => response.json())
+            .then(data => {
+                if(data.hasOwnProperty('session_id'))
+                    sessionStorage.setItem('session_id', data.session_id);
+                this.props.history.push('/quizgame');
+            })
+    }
+
+
+    async checkIfSessionIsValid() {
+        let sessionId = sessionStorage.getItem('session_id');
+        if (sessionId) {
+            this.setState({
+                sessionId: sessionId
+            });
+            await this.getRandomQuestion();
+        } else {
+            this.props.history.push('/');
+        }
+        console.log("SESSIONID", sessionId);
     }
 
     getRandomQuestion() {
 
-        let urlAddress = "http://localhost:8080/api/get_random_question";
+        let urlAddress = "http://localhost:5000/api/get_random_question";
         fetch(urlAddress, {
             method: 'GET',
             headers: {
@@ -65,10 +103,12 @@ class QuizGame extends Component {
         let jsonStr = {};
         let body ={
             _id: this.state.questionId,
-            correct_answer: itm
+            correct_answer: itm,
+            session_id: this.state.sessionId,
         };
         jsonStr['_id'] = this.state.questionId;
         jsonStr['correct_answer'] = itm;
+        jsonStr['session_id'] = this.state.sessionId;
         console.log(jsonStr);
         await this.checkJsonObjectFromApi(body);
         this.newQuestion();
@@ -76,7 +116,7 @@ class QuizGame extends Component {
 
     checkJsonObjectFromApi(jsonStr) {
         console.log(jsonStr);
-        let urlAddress = "http://localhost:8080/api/check_correct_answer";
+        let urlAddress = "http://localhost:5000/api/check_correct_answer";
         fetch(urlAddress, {
             method: 'POST',
             headers: {
@@ -93,21 +133,15 @@ class QuizGame extends Component {
             })
             .then(response => response.json())
             .then(data => {
+                console.log("CURRENT", data);
                 this.markCorrectWrongForUser(data)
             })
     }
 
     markCorrectWrongForUser(data) {
-        if(data) {
-            let points = this.state.points;
-            if(data === "true") {
-                points = points + 5;
-            }
-            if(data === "false") {
-                points = points - 1;
-            }
+        if(data.hasOwnProperty('current_score')) {
             this.setState({
-                points: points
+                points: data.current_score,
             });
         }
     }
