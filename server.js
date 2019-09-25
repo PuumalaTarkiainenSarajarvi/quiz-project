@@ -1,4 +1,6 @@
 require('dotenv').config();
+const { check, validationResult } = require('express-validator');
+
 
 var express = require("express");
 var bodyParser = require("body-parser");
@@ -176,7 +178,17 @@ app.get("/api/get_random_question", function (request, response) {
     });
 });
 
-app.post("/api/post_high_score_info", async function (request, response) {
+app.post("/api/post_high_score_info", [
+    check('session_id').isLength({ min: 24, max: 24 }),
+    check('email').isEmail(),
+    check('nickname').isString({ min: 4 })
+], async function (request, response) {
+
+    const errors = validationResult(request)
+    if (!errors.isEmpty()) {
+        return response.status(422).json({ errors: errors.array() })
+    }
+
     var session_id = request.body.session_id
     var email = request.body.email
     var nickname = request.body.nickname
@@ -200,42 +212,71 @@ app.post("/api/post_high_score_info", async function (request, response) {
         )
     });
     getCurrentScore.then((score) => {
-        db.collection(HIGH_SCORES_COLLECTION).findOne({email: email}, function(err, result){
-            if(err){
+        db.collection(HIGH_SCORES_COLLECTION).findOne({ email: email }, function (err, result) {
+            if (err) {
                 handleError(err)
-            } 
-            else if(result != null){
-                console.log("TEN BEST SCORES",result.tenBestScores)
+            }
+            else if (result != null) {
+                console.log("TEN BEST SCORES", result.tenBestScores)
                 var smallestScore;
                 var smallestIndex;
-                var newScoreArray = result.tenBestScores
-                newScoreArray.forEach((arrayScore, index)=>{
-                    if(smallestScore === undefined){
-                        smallestScore =  arrayScore.score
-                        smallestIndex = index
-                    }
-                    if(smallestScore > arrayScore.score){
-                        smallestScore = arrayScore.score
-                        smallestIndex = index
-                    }
-                    
-                });
-                console.log("SMALLEST SCORE IS",smallestScore,"Scores index is",smallestIndex)
-                newScoreArray[smallestIndex].score = score
-                db.collection(HIGH_SCORES_COLLECTION).updateOne(
-                    {email: email},
-                    {$set:{tenBestScores: newScoreArray}}, (err, res)=>{
-                        if(err) handleError(err.message)
-                        else{
-                            console.log("NEW SCORE INSERTED",newScoreArray,"result",res.result)
-                            response.status(200).send("Succesfully updated high scores")
+                if (result.tenBestScores.length == 10) {
+                    var newScoreArray = result.tenBestScores
+                    newScoreArray.forEach((arrayScore, index) => {
+                        if (smallestScore === undefined) {
+                            smallestScore = arrayScore.score
+                            smallestIndex = index
                         }
-                        });
+                        else if (smallestScore > arrayScore.score) {
+                            smallestScore = arrayScore.score
+                            smallestIndex = index
+                        }
+                    });
 
-                
+                    console.log("SMALLEST SCORE IS", smallestScore, "Scores index is", smallestIndex)
+                    newScoreArray[smallestIndex].score = score
+                    newScoreArray[smallestIndex].date = new Date()
+                    console.log(newScoreArray[smallestIndex])
+                    db.collection(HIGH_SCORES_COLLECTION).updateOne(
+                        { email: email },
+                        { $set: { tenBestScores: newScoreArray } }, (err, res) => {
+                            if (err) handleError(err.message)
+                            else {
+                                console.log("NEW SCORE INSERTED", newScoreArray, "result", res.result)
+                                response.status(200).send("Succesfully updated high scores")
+                            }
+                        });
+                }
+
+                else if(result.tenBestScores.length < 10){
+                    var newScoreArray = result.tenBestScores
+                    newScoreArray.push({score: score, date: new Date()})
+                    db.collection(HIGH_SCORES_COLLECTION).updateOne(
+                        { email: email },
+                        { $set: { tenBestScores: newScoreArray } }, (err, res) => {
+                            if (err) handleError(err.message)
+                            else {
+                                console.log("NEW SCORE INSERTED", newScoreArray, "result", res.result)
+                                response.status(200).send("Succesfully updated high scores")
+                            }
+                        });
+                }
+
+
+
             }
-            else{
-                response.status(404).send("No such email")
+            else {
+                db.collection(HIGH_SCORES_COLLECTION).insertOne(
+                    {
+                        email: email,
+                        nickname: nickname,
+                        tenBestScores: [{
+                            score: score,
+                            date: new Date()
+                        }]
+                    })
+                    var responseString = "Created new high scores for email "+email
+                    response.status(200).json(responseString)
             }
         });
     })
