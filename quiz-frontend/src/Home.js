@@ -12,7 +12,11 @@ class Home extends Component {
     }
 
     componentDidMount() {
-        //this.fetchData()
+        this.removeSessionStorage();
+    }
+
+    removeSessionStorage() {
+        sessionStorage.removeItem('session_id');
     }
 
     renderButtons() {
@@ -26,36 +30,18 @@ class Home extends Component {
     }
 
     showHighScores() {
-        console.log("HighScores");
+        this.props.history.push('/high-scores');
     }
 
-    startGame() {
+    async startGame() {
         console.log("StartGamed");
         this.props.history.push('/quizgame');
-    }
 
-    fetchData() {
-        let urlAddress = "http://localhost:8080/api/get_all_high_scores";
-        fetch(urlAddress, {
-            method: 'GET',
-            headers: {
-                Accept: 'application/json',
-            }
-        })
-        .then(function (response) {
-            if (!response.ok) {
-                throw Error(response.statusText);
-            }
-            return response;
-        })
-        .then(response => response.json())
-        .then(data => {
-            console.log("Received response", data)
-        })
     }
 
     render() {
         return (
+
            <div className={"outer"}>
                <h1 className={"homeTitle"}>QUIZ GAME</h1>
                {this.renderButtons()}

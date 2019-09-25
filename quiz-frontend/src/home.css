@@ -1,4 +1,8 @@
-* {
+html {
+    height:100%;
+}
+body {
+    min-height:100%;
     background: url("./img/quiz-sign-wooden-table-made-wood.jpg") no-repeat center center fixed;
     -webkit-background-size: cover;
     -moz-background-size: cover;
@@ -26,8 +30,7 @@
 }
 
 .homeButtons {
-    margin-left: 3rem;
-    margin-right: 3rem;
+
 }
 .homeButtons .btn {
     margin: 0 auto;
