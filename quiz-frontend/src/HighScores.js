@@ -73,7 +73,7 @@ class HighScores extends Component {
             })
             .catch((error) => {
                 console.log(error);
-                alert("User seems to not have any personal records yet.. Go play yeye ! :)")
+                alert("User doesn't have any personal records yet.. Go play yeye ! :)")
             });
     }
 
@@ -193,6 +193,7 @@ class HighScores extends Component {
         }
         return (
             <div>
+                <img alt={""} src={"/images/back.png"}/>
                 <Tabs defaultActiveKey="allTime">
                     <Tab eventKey="allTime" title="All time">
                         {this.renderScores()}

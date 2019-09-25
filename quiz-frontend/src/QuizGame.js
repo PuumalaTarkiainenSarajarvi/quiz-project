@@ -26,7 +26,7 @@ class QuizGame extends Component {
     startGameSession() {
         let urlAddress = "http://localhost:5000/api/start_game_session";
         fetch(urlAddress, {
-            method: 'PUT',
+            method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
@@ -43,6 +43,10 @@ class QuizGame extends Component {
                     sessionStorage.setItem('session_id', data.session_id);
                 this.props.history.push('/quizgame');
             })
+            .catch((error) => {
+                console.log(error);
+                alert("Try again :)");
+            });
     }
 
 
@@ -60,13 +64,17 @@ class QuizGame extends Component {
     }
 
     getRandomQuestion() {
-
+        let sessionIdentifier = [];
+        let sessionId = sessionStorage.getItem('session_id');
+        sessionIdentifier['session_id'] = sessionId;
+        console.log("SE", sessionIdentifier);
         let urlAddress = "http://localhost:5000/api/get_random_question";
         fetch(urlAddress, {
             method: 'GET',
             headers: {
                 Accept: 'application/json',
-            }
+            },
+            body: JSON.stringify(sessionIdentifier)
         })
             .then(function (response) {
                 if (!response.ok) {
