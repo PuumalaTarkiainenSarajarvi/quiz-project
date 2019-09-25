@@ -62,11 +62,9 @@ function validateSessionId(session_id) {
         db.collection(SESSION_COLLECTION).find({ _id: new ObjectID(session_id) })
             .toArray((err, result) => {
                 if (result && result.length > 0) {
-                    console.log("ID FOUND")
                     resolve(true)
                 }
                 else {
-                    console.log("ID NOT FOUND")
                     resolve(false)
                 }
             })
@@ -80,31 +78,25 @@ function updateScores(difficulty, status, session_id) {
             case "easy":
                 if (status) score = 5
                 else if (!status) score = -15
-                console.log("Question was ", difficulty, " user was ", status, " rewarding ", score)
                 break;
             case "medium":
                 if (status) score = 10
                 else if (!status) score = -10
-                console.log("Question was ", difficulty, " user was ", status, " rewarding ", score)
                 break;
             case "hard": One
                 if (status) score = 15
                 else if (!status) score = -5
-                console.log("Question was ", difficulty, " user was ", status, " rewarding ", score)
                 break;
         }
         db.collection(SESSION_COLLECTION).findOne(
             {
                 _id: new ObjectID(session_id)
             }, function (err, result) {
-                console.log("SESSION RESULT", result)
                 if (err) handleError(response, err.message, "Failed to get session data")
                 else if (!Number.isInteger(result.current_score)) reject("Current score is corrupted")
                 else {
                     var newScore = result.current_score + score
-                    console.log("NEW SCORE", newScore)
                     db.collection(SESSION_COLLECTION).update({ _id: new ObjectID(session_id) }, { current_score: newScore }, () => {
-                        console.log("RETURNING SCORE ", newScore)
                         resolve(newScore)
                     })
 
@@ -125,15 +117,12 @@ app.post("/api/check_correct_answer", async function (request, response) {
     var _id = request.body._id
     validateSessionId(session_id).then(function (data) {
         if (data) {
-            console.log("VALIDATION", data)
             var correct_answer = request.body.correct_answer
             var dataToReturn;
-            console.log("ID ", _id)
             db.collection(QUESTIONS_COLLECTION).findOne(
                 {
                     _id: new ObjectID(_id)
                 }, function (err, result) {
-                    console.log("RESULT", result)
                     if (err) handleError(response, err.message, "Failed to check correct answer")
                     else {
                         if (result.correct_answer === correct_answer) dataToReturn = { status: "true" }
@@ -142,7 +131,6 @@ app.post("/api/check_correct_answer", async function (request, response) {
 
                         updateScores(result.difficulty, dataToReturn.status, session_id).then((data) => {
                             dataToReturn.current_score = data
-                            console.log("THIS DATA WILL BE RETURNED", dataToReturn)
                             response.status(200).json(dataToReturn)
                         })
 
@@ -217,7 +205,6 @@ app.post("/api/post_high_score_info", [
                 handleError(err)
             }
             else if (result != null) {
-                console.log("TEN BEST SCORES", result.tenBestScores)
                 var smallestScore;
                 var smallestIndex;
                 if (result.tenBestScores.length == 10) {
@@ -233,16 +220,13 @@ app.post("/api/post_high_score_info", [
                         }
                     });
 
-                    console.log("SMALLEST SCORE IS", smallestScore, "Scores index is", smallestIndex)
                     newScoreArray[smallestIndex].score = score
                     newScoreArray[smallestIndex].date = new Date()
-                    console.log(newScoreArray[smallestIndex])
                     db.collection(HIGH_SCORES_COLLECTION).updateOne(
                         { email: email },
                         { $set: { tenBestScores: newScoreArray } }, (err, res) => {
                             if (err) handleError(err.message)
                             else {
-                                console.log("NEW SCORE INSERTED", newScoreArray, "result", res.result)
                                 response.status(200).send("Succesfully updated high scores")
                             }
                         });
@@ -256,7 +240,6 @@ app.post("/api/post_high_score_info", [
                         { $set: { tenBestScores: newScoreArray } }, (err, res) => {
                             if (err) handleError(err.message)
                             else {
-                                console.log("NEW SCORE INSERTED", newScoreArray, "result", res.result)
                                 response.status(200).send("Succesfully updated high scores")
                             }
                         });
