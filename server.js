@@ -65,7 +65,7 @@ function validateSessionId(session_id) {
                     resolve(true)
                 }
                 else {
-                    resolve(false)
+                    reject("Unauthorized")
                 }
             })
     })
@@ -111,10 +111,19 @@ function updateScores(difficulty, status, session_id) {
 
 
 
-app.post("/api/check_correct_answer", async function (request, response) {
+app.post("/api/check_correct_answer",[
+    check('session_id').isLength({ min: 24, max: 24 }),
+    check('question_id').isLength({ min: 24, max: 24 }),
+    check('correct_answer').isString()
+], async function (request, response) {
+    const errors = validationResult(request)
+
+    if (!errors.isEmpty()) {
+        return response.status(422).json({ errors: errors.array() })
+    }
 
     var session_id = request.body.session_id
-    var _id = request.body._id
+    var _id = request.body.question_id
     validateSessionId(session_id).then(function (data) {
         if (data) {
             var correct_answer = request.body.correct_answer
@@ -142,28 +151,47 @@ app.post("/api/check_correct_answer", async function (request, response) {
             response.status(401).send("Authentication failed")
         }
 
+    }).catch((error)=>{
+        handleError(error)
     })
 
 });
 
-app.get("/api/get_random_question", function (request, response) {
-    db.collection(QUESTIONS_COLLECTION).aggregate([{ $sample: { size: 1 } }]).toArray(function (err, result) {
-        if (err) {
-            handleError(response, err.message, "Failed to get random question")
-        }
-        else {
-            let answers = [result[0].correct_answer, result[0].incorrect_answers[0], result[0].incorrect_answers[1], result[0].incorrect_answers[2]]
-            answers = shuffle(answers)
-            const responseData = {
-                _id: result[0]._id,
-                category: result[0].category,
-                difficulty: result[0].difficulty,
-                question: result[0].question,
-                answers
+app.get("/api/get_random_question",[
+    check('session_id').isLength({ min: 24, max: 24 })
+], function (request, response) {
+    const errors = validationResult(request)
+
+    if (!errors.isEmpty()) {
+        return response.status(422).json({ errors: errors.array() })
+    }
+
+    var session_id = request.body.session_id
+        validateSessionId(session_id).then(function(data){
+            console.log("SESSION VALIDATED")
+            if(data){
+                db.collection(QUESTIONS_COLLECTION).aggregate([{ $sample: { size: 1 } }]).toArray(function (err, result) {
+                    if (err) {
+                        handleError(response, err.message, "Failed to get random question")
+                    }
+                    else {
+                        let answers = [result[0].correct_answer, result[0].incorrect_answers[0], result[0].incorrect_answers[1], result[0].incorrect_answers[2]]
+                        answers = shuffle(answers)
+                        const responseData = {
+                            _id: result[0]._id,
+                            category: result[0].category,
+                            difficulty: result[0].difficulty,
+                            question: result[0].question,
+                            answers
+                        }
+                        response.status(200).json(responseData)
+                    }
+                });
             }
-            response.status(200).json(responseData)
-        }
-    });
+        }).catch((error)=>{
+            response.status(403).send("Unauthorized")
+            handleError(error)
+        })
 });
 
 app.post("/api/post_high_score_info", [
@@ -270,11 +298,11 @@ app.post("/api/post_high_score_info", [
 });
 
 app.get("/api/get_all_high_scores", function (request, response) {
-    db.collection(HIGH_SCORES_COLLECTION).find({}).toArray(function (err, docs) {
+    db.collection(HIGH_SCORES_COLLECTION).find({},{fields:{nickname: 1, tenBestScores: 1, _id: 0}}).toArray(function (err, docs) {
         if (err) {
             handleError(response, err.message, "Failed to get high scores.");
         } else {
-            response.status(200).json(docs);
+            response.status(200).json(docs)
         }
     });
 });
