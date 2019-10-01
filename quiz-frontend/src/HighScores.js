@@ -11,6 +11,7 @@ class HighScores extends Component {
             emailHandling: false,
             personalJson: undefined,
             inputValue: "",
+            allHighScore: undefined,
         };
         this.handleSubmit = this.handleSubmit.bind(this);
         this.handleChange = this.handleChange.bind(this);
@@ -39,6 +40,7 @@ class HighScores extends Component {
                 console.log("data",data);
                 this.setState({
                    isLoading: false,
+                    allHighScore: data,
                 });
             });
     }
@@ -49,12 +51,16 @@ class HighScores extends Component {
         this.apiGetPersonalBest(jsonStr);
     }
 
+
+
     apiGetPersonalBest(jsonStr) {
+        console.log("TT");
         let urlAddress = "http://localhost:5000/api/get_personal_bests";
         fetch(urlAddress, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+
             },
             body: JSON.stringify(jsonStr)
         })
@@ -113,7 +119,19 @@ class HighScores extends Component {
            return a[highScore] - b[highScore];
         });
     }
-
+    renderHighScores() {
+        let sortedJsonData = this.sortJsonScores(this.state.allHighScore);
+        if(sortedJsonData) {
+            return sortedJsonData.map((itm, i) => {
+                return(<tr key={i}>
+                    <td>{i}</td>
+                    <td>{itm[nickName]}</td>
+                    <td>Testi</td>
+                    <td>{itm[highScore]}</td>
+                </tr>)
+            });
+        }
+    }
     renderPersonalScores() {
         let sortedJsonData = this.sortJsonScores(this.state.personalJson[0][tenBestScores]);
         let userNickName = this.state.personalJson[0][nickName];
@@ -139,48 +157,38 @@ class HighScores extends Component {
     }
 
     renderScores() {
-        return(<div className={"allTimeTableView"}>
-            <p className={"tableHeader"}>All time</p>
-            <Table responsive="md">
-                <thead>
-                <tr>
-                    <th>#</th>
-                    <th>Nick</th>
-                    <th>Date</th>
-                    <th>Score</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr>
-                    <td>1</td>
-                    <td>Erkki</td>
-                    <td>12.02.2019</td>
-                    <td>220</td>
-                </tr>
-                <tr>
-                    <td>2</td>
-                    <td>Erkki</td>
-                    <td>12.02.2019</td>
-                    <td>220</td>
-                </tr>
-                <tr>
-                    <td>3</td>
-                    <td>Erkki</td>
-                    <td>12.02.2019</td>
-                    <td>220</td>
-                </tr>
-                </tbody>
-            </Table>
-        </div>)
+        if(this.state.allHighScore) {
+            return (<div className={"allTimeTableView"}>
+                <p className={"tableHeader"}>All time</p>
+                <Table responsive="md">
+                    <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Nick</th>
+                        <th>Date</th>
+                        <th>Score</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {this.renderHighScores()}
+                    </tbody>
+                </Table>
+            </div>)
+        }
     }
 
     async setEmailHandling() {
+        await this.emailJsonBody(this.state.inputValue);
         await this.emailJsonBody(this.state.inputValue);
         if(this.state.personalJson) {
         this.setState({
             emailHandling: true,
         });
         }
+    }
+
+    goBack() {
+        this.props.history.goBack();
     }
 
     render() {
@@ -193,7 +201,7 @@ class HighScores extends Component {
         }
         return (
             <div>
-                <img alt={""} src={"/images/back.png"}/>
+                <img onClick={() => {this.goBack()}} alt={""} src={"/images/back.png"}/>
                 <Tabs defaultActiveKey="allTime">
                     <Tab eventKey="allTime" title="All time">
                         {this.renderScores()}
