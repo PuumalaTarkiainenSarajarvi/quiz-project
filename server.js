@@ -1,7 +1,7 @@
 require('dotenv').config();
 const { check, validationResult } = require('express-validator');
 
-
+var cors = require("cors");
 var express = require("express");
 var bodyParser = require("body-parser");
 var cookieParser = require('cookie-parser')
@@ -12,11 +12,13 @@ var CATEGORIES_COLLECTION = "categories";
 var QUESTIONS_COLLECTION = "questions";
 var ANSWERS_COLLECTION = "answers";
 var HIGH_SCORES_COLLECTION = "high_scores";
+var PERSONAL_HIGH_SCORES_COLLECTION = "personal_high_scores";
 var SESSION_COLLECTION = "session";
 
 var app = express();
 app.use(bodyParser.json());
-app.use(cookieParser())
+app.use(cookieParser());
+app.use(cors());
 
 var db;
 
@@ -32,8 +34,9 @@ function shuffle(a) {
 app.use(function (request, response, next) {
     response.header('X-XSS-Protection', 0);
     response.header('Access-Control-Allow-Origin', 'http://localhost:3000');
-    response.header('Access-Control-Allow-Headers', 'Content-Type');
-    response.header('Access-Control-Allow-Methods',  'POST, GET, PUT');
+    response.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept');
+    response.header('Access-Control-Allow-Methods',  'POST, GET, PUT, OPTIONS');
+
     next();
 });
 
@@ -49,7 +52,7 @@ mongodb.MongoClient.connect(process.env.MONGODB_URI, function (err, client) {
     console.log("Database connection ready");
 
     // Initialize the app.
-    var server = app.listen(process.env.PORT || 6000, function () {
+    var server = app.listen(process.env.PORT || 5000, function () {
         var port = server.address().port;
         console.log("App now running on port", port);
     });
@@ -115,7 +118,7 @@ function updateScores(difficulty, status, session_id) {
 }
 
 app.get("/api/get_all_high_scores", function (request, response) {
-    db.collection(HIGH_SCORES_COLLECTION).find({},{fields:{nickname: 1, tenBestScores: 1, _id: 0}}).toArray(function (err, docs) {
+    db.collection(HIGH_SCORES_COLLECTION).find({},{fields:{nickname: 1, score: 1, _id: 0}}).toArray(function (err, docs) {
         if (err) {
             handleError(response, err.message, "Failed to get high scores.");
         } else {
@@ -138,7 +141,26 @@ app.post("/api/start_game_session", async function (request, response) {
         }
     });
 });
+app.post("/api/get_personal_bests", function (request, response) {
 
+    let email = request.body.email;
+    if(email) {
+        console.log("EMAILEMAIL", email);
+        db.collection(PERSONAL_HIGH_SCORES_COLLECTION).find({ email })
+            .toArray((err, result) => {
+                if(err) {
+                    handleError(response, err.message, "Failed to get high score");
+                }
+                if (result.length > 0) {
+                    console.log("EMAIL FOUND", email);
+                    response.status(200).json(result);
+                }
+                else {
+                    response.status(404).json(result);
+                }
+            })
+    }
+});
 app.use(function(req,res,next){
     if(!req.headers.authorization){
         
@@ -193,14 +215,7 @@ app.post("/api/check_correct_answer",[
 
 });
 
-app.get("/api/get_random_question",[
-    check('session_id').isLength({ min: 24, max: 24 })
-], function (request, response) {
-    const errors = validationResult(request)
-
-    if (!errors.isEmpty()) {
-        return response.status(422).json({ errors: errors.array() })
-    }
+app.get("/api/get_random_question", function (request, response) {
 
     var session_id = request.headers.authorization
         validateSessionId(session_id).then(function(data){
@@ -231,7 +246,6 @@ app.get("/api/get_random_question",[
 });
 
 app.post("/api/post_high_score_info", [
-    check('session_id').isLength({ min: 24, max: 24 }),
     check('email').isEmail(),
     check('nickname').isString({ min: 4 })
 ], async function (request, response) {
@@ -333,26 +347,6 @@ app.post("/api/post_high_score_info", [
 
 });
 
-app.post("/api/get_personal_bests", function (request, response) {
 
-    let email = request.body.email;
-    if(email) {
-    console.log("EMAILEMAIL", email);
-    db.collection(HIGH_SCORES_COLLECTION).find({ email })
-        .toArray((err, result) => {
-            if(err) {
-                handleError(response, err.message, "Failed to get high score");
-            }
-
-            if (result && result.length > 0) {
-                console.log("EMAIL FOUND", email);
-                response.status(200).json(result);
-            }
-            else {
-                response.status(404).json(result);
-            }
-        })
-    }
-});
 
 
