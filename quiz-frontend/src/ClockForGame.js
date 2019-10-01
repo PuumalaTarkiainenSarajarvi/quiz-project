@@ -7,7 +7,7 @@ class ClockForGame extends Component {
     constructor(props){
         super(props);
         this.state = {
-            currentCount: 60,
+            currentCount: 5,
             percentageCount: 100
         }
     }
@@ -37,7 +37,7 @@ class ClockForGame extends Component {
         if(this.state.currentCount > 0) {
 
         } else {
-            return <Redirect to={'/'}/>
+            return <Redirect to={'/game-over'}/>
         }
     }
 

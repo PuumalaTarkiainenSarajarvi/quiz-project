@@ -22,7 +22,7 @@ class Home extends Component {
     renderButtons() {
         return(
             <div className={"homeButtons"}>
-                <Button variant={"outline-success"} size={"lg"} block  onClick={(e) => this.startGame(e)}>Play</Button>
+                <Button variant={"outline-success"} size={"lg"} block  onClick={() => {this.startGame()}}>Play</Button>
                 <Button variant={"outline-info"} size={"lg"} block className={"highScoresButton"} onClick={(e) => this.showHighScores(e)}>HighScores</Button>
 
             </div>

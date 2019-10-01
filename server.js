@@ -1,7 +1,7 @@
 require('dotenv').config();
 const { check, validationResult } = require('express-validator');
 
-
+var cors = require("cors");
 var express = require("express");
 var bodyParser = require("body-parser");
 var cookieParser = require('cookie-parser')
@@ -18,10 +18,15 @@ var SESSION_COLLECTION = "session";
 
 var app = express();
 app.use(bodyParser.json());
+<<<<<<< HEAD
 app.use(cors({
     credentials: true,
   }));
 app.use(cookieParser())
+=======
+app.use(cookieParser());
+app.use(cors());
+>>>>>>> 7bf83631a91b6e36a1aaa4a633b66be2947547aa
 
 
 var db;
@@ -39,10 +44,17 @@ function shuffle(a) {
 
 app.use(function (request, response, next) {
     response.header('X-XSS-Protection', 0);
+<<<<<<< HEAD
     response.header('Access-Control-Allow-Origin', '*');
     response.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     response.header('Access-Control-Allow-Methods',  'POST, GET, PUT, OPTIONS');
     response.header('Access-Control-Allow-Credentials', 'true');
+=======
+    response.header('Access-Control-Allow-Origin', 'http://localhost:3000');
+    response.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept');
+    response.header('Access-Control-Allow-Methods',  'POST, GET, PUT, OPTIONS');
+
+>>>>>>> 7bf83631a91b6e36a1aaa4a633b66be2947547aa
     next();
 });
 
@@ -126,7 +138,7 @@ function updateScores(difficulty, status, session_id) {
 }
 
 app.get("/api/get_all_high_scores", function (request, response) {
-    db.collection(HIGH_SCORES_COLLECTION).find({},{fields:{nickname: 1, tenBestScores: 1, _id: 0}}).toArray(function (err, docs) {
+    db.collection(HIGH_SCORES_COLLECTION).find({},{fields:{nickname: 1, score: 1, _id: 0}}).toArray(function (err, docs) {
         if (err) {
             handleError(response, err.message, "Failed to get high scores.");
         } else {
@@ -148,7 +160,26 @@ app.post("/api/start_game_session", async function (request, response) {
         }
     });
 });
+app.post("/api/get_personal_bests", function (request, response) {
 
+    let email = request.body.email;
+    if(email) {
+        console.log("EMAILEMAIL", email);
+        db.collection(PERSONAL_HIGH_SCORES_COLLECTION).find({ email })
+            .toArray((err, result) => {
+                if(err) {
+                    handleError(response, err.message, "Failed to get high score");
+                }
+                if (result.length > 0) {
+                    console.log("EMAIL FOUND", email);
+                    response.status(200).json(result);
+                }
+                else {
+                    response.status(404).json(result);
+                }
+            })
+    }
+});
 app.use(function(req,res,next){
     if(!req.headers.authorization){
         
@@ -203,14 +234,7 @@ app.post("/api/check_correct_answer",[
 
 });
 
-app.get("/api/get_random_question",[
-    check('session_id').isLength({ min: 24, max: 24 })
-], function (request, response) {
-    const errors = validationResult(request)
-
-    if (!errors.isEmpty()) {
-        return response.status(422).json({ errors: errors.array() })
-    }
+app.get("/api/get_random_question", function (request, response) {
 
     var session_id = request.headers.authorization
         validateSessionId(session_id).then(function(data){
@@ -347,26 +371,6 @@ app.post("/api/post_high_score_info", [
 
 });
 
-app.post("/api/get_personal_bests", function (request, response) {
 
-    let email = request.body.email;
-    if(email) {
-    console.log("EMAILEMAIL", email);
-    db.collection(HIGH_SCORES_COLLECTION).find({ email })
-        .toArray((err, result) => {
-            if(err) {
-                handleError(response, err.message, "Failed to get high score");
-            }
-
-            if (result && result.length > 0) {
-                console.log("EMAIL FOUND", email);
-                response.status(200).json(result);
-            }
-            else {
-                response.status(404).json(result);
-            }
-        })
-    }
-});
 
 
