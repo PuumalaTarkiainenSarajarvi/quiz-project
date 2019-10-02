@@ -126,7 +126,7 @@ function updateScores(difficulty, status, session_id) {
 }
 
 app.get("/api/get_all_high_scores", function (request, response) {
-    db.collection(HIGH_SCORES_COLLECTION).find({},{fields:{nickname: 1, score: 1, _id: 0}}).toArray(function (err, docs) {
+    db.collection(HIGH_SCORES_COLLECTION).find({},{fields:{nickname: 1, score: 1, timestamp:1,_id: 0}}).toArray(function (err, docs) {
         if (err) {
             handleError(response, err.message, "Failed to get high scores.");
         } else {
