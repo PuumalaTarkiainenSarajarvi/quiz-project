@@ -320,12 +320,13 @@ app.post("/api/post_high_score_info", [
                             smallestIndex = index
                         }
                     });
-
-                    newScoreArray[smallestIndex].score = score
-                    newScoreArray[smallestIndex].date = new Date()
+                    if(smallestScore < score ){
+                        newScoreArray[smallestIndex].score = score
+                        newScoreArray[smallestIndex].date = new Date()
+                    }
                     db.collection(PERSONAL_HIGH_SCORES_COLLECTION).updateOne(
                         { email: email },
-                        { $set: { tenBestScores: newScoreArray } }, (err, res) => {
+                        { $set: { tenBestScores: newScoreArray, nickname: nickname} }, (err, res) => {
                             if (err) handleError(err.message)
                             else {
                                 response.status(200).send({ status: "Succesfully updated high scores" })
