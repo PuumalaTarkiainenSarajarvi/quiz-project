@@ -137,7 +137,7 @@ app.post("/api/start_game_session", async function (request, response) {
     db.collection(SESSION_COLLECTION).insertOne({ 
         _id: new ObjectID(), 
         current_score: 0,
-        timestamp: new Date()
+        createdAt: new Date()
     }, (err, result) => {
         if (result) {
             var dataToReturn = {
