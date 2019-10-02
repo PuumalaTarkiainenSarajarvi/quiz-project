@@ -48,6 +48,7 @@ class GameOver extends Component {
 
         let urlAddress = "http://localhost:5000/api/post_high_score_info";
         let sessionId = this.props.location.state.sessionId;
+        console.log("SESSIONID", sessionId);
         fetch(urlAddress, {
             method: 'POST',
             headers: {
@@ -57,26 +58,19 @@ class GameOver extends Component {
             },
             body: JSON.stringify(body)
         })
-            .then(function (response) {
+            .then(response => {
+                if(response.status === 200) {
+                    this.props.history.push('/');
+                }
                 if (!response.ok) {
                     throw Error(response.statusText);
                 }
                 return response;
             })
-            .then(response => response.json())
-            .then(data => {
-                {this.checkData(data)}
-            })
             .catch((error) => {
                 console.log(error);
                 alert("Try again :)");
             });
-    }
-
-    checkData(data) {
-        if(data.status === "Succesfully updated high scores") {
-            this.props.history.push('/');
-        } else { console.log("ei täällä"); }
     }
 
     render() {
@@ -86,7 +80,6 @@ class GameOver extends Component {
                 <div className={"gameOverContent"}>
                     <h1>Game over :( </h1>
                     <br/>
-                    <p>SessionId: {this.props.location.state.sessionId}</p>
                     <p>Your score was: {this.props.location.state.score}</p>
                     <br/>
                     <p>Email: </p>
