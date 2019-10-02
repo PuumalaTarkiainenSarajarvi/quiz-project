@@ -6,6 +6,7 @@ var express = require("express");
 var bodyParser = require("body-parser");
 var cookieParser = require('cookie-parser')
 var mongodb = require("mongodb");
+var cors = require('cors')
 var ObjectID = mongodb.ObjectID;
 
 var CATEGORIES_COLLECTION = "categories";
@@ -17,8 +18,16 @@ var SESSION_COLLECTION = "session";
 
 var app = express();
 app.use(bodyParser.json());
+<<<<<<< HEAD
+app.use(cors({
+    credentials: true,
+  }));
+app.use(cookieParser())
+=======
 app.use(cookieParser());
 app.use(cors());
+>>>>>>> 7bf83631a91b6e36a1aaa4a633b66be2947547aa
+
 
 var db;
 
@@ -31,12 +40,21 @@ function shuffle(a) {
     return a;
 }
 
+
+
 app.use(function (request, response, next) {
     response.header('X-XSS-Protection', 0);
+<<<<<<< HEAD
+    response.header('Access-Control-Allow-Origin', '*');
+    response.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    response.header('Access-Control-Allow-Methods',  'POST, GET, PUT, OPTIONS');
+    response.header('Access-Control-Allow-Credentials', 'true');
+=======
     response.header('Access-Control-Allow-Origin', 'http://localhost:3000');
     response.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept');
     response.header('Access-Control-Allow-Methods',  'POST, GET, PUT, OPTIONS');
 
+>>>>>>> 7bf83631a91b6e36a1aaa4a633b66be2947547aa
     next();
 });
 
@@ -105,7 +123,9 @@ function updateScores(difficulty, status, session_id) {
                 if (err) handleError(response, err.message, "Failed to get session data")
                 else if (!Number.isInteger(result.current_score)) reject("Current score is corrupted")
                 else {
+                    
                     var newScore = result.current_score + score
+                    if(newScore < 0) newScore = 0
                     db.collection(SESSION_COLLECTION).update({ _id: new ObjectID(session_id) }, { current_score: newScore }, () => {
                         resolve(newScore)
                     })
@@ -133,7 +153,6 @@ app.post("/api/start_game_session", async function (request, response) {
             var dataToReturn = {
                 session_id: result.insertedId
             }
-            response.cookie('session_id', result.insertedId,{maxAge: 120000, httpOnly:true})
             response.status(200).json(dataToReturn)
         }
         else if (err) {
@@ -278,11 +297,11 @@ app.post("/api/post_high_score_info", [
         )
     });
     getCurrentScore.then((score) => {
-        db.collection(HIGH_SCORES_COLLECTION).findOne({ email: email }, function (err, result) {
+        db.collection(PERSONAL_HIGH_SCORES_COLLECTION).findOne({ email: email }, function (err, result) {
             if (err) {
                 handleError(err)
             }
-            else if (result != null) {
+            else if (result != null) {          
                 var smallestScore;
                 var smallestIndex;
                 if (result.tenBestScores.length == 10) {
@@ -300,7 +319,7 @@ app.post("/api/post_high_score_info", [
 
                     newScoreArray[smallestIndex].score = score
                     newScoreArray[smallestIndex].date = new Date()
-                    db.collection(HIGH_SCORES_COLLECTION).updateOne(
+                    db.collection(PERSONAL_HIGH_SCORES_COLLECTION).updateOne(
                         { email: email },
                         { $set: { tenBestScores: newScoreArray } }, (err, res) => {
                             if (err) handleError(err.message)
@@ -313,7 +332,7 @@ app.post("/api/post_high_score_info", [
                 else if(result.tenBestScores.length < 10){
                     var newScoreArray = result.tenBestScores
                     newScoreArray.push({score: score, date: new Date()})
-                    db.collection(HIGH_SCORES_COLLECTION).updateOne(
+                    db.collection(PERSONAL_HIGH_SCORES_COLLECTION).updateOne(
                         { email: email },
                         { $set: { tenBestScores: newScoreArray } }, (err, res) => {
                             if (err) handleError(err.message)
@@ -327,7 +346,8 @@ app.post("/api/post_high_score_info", [
 
             }
             else {
-                db.collection(HIGH_SCORES_COLLECTION).insertOne(
+                console.log("RESULT",result)
+                db.collection(PERSONAL_HIGH_SCORES_COLLECTION).insertOne(
                     {
                         email: email,
                         nickname: nickname,
@@ -338,10 +358,14 @@ app.post("/api/post_high_score_info", [
                     })
                     var responseString = "Created new high scores for email "+email
                     response.status(200).json(responseString)
+                    db.collection(HIGH_SCORES_COLLECTION).insertOne({
+                        nickname: nickname,
+                        score: score,
+                        timestamp: new Date()
+                    })
             }
         });
-    })
-        .catch((err) => {
+    }).catch((err) => {
             console.log(err)
         });
 
