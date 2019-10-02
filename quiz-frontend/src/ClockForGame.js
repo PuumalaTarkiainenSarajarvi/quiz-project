@@ -7,7 +7,7 @@ class ClockForGame extends Component {
     constructor(props){
         super(props);
         this.state = {
-            currentCount: 60,
+            currentCount: 5,
             percentageCount: 100
         }
     }

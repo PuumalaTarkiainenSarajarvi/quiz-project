@@ -17,8 +17,9 @@ class QuizGame extends Component {
             sessionId: undefined,
         }
     }
+    componentDidMount(){
+        let sessionId = sessionStorage.getItem('session_id');
 
-   async componentDidMount() {
         this.startGameSession();
         this.checkIfSessionIsValid();
     }

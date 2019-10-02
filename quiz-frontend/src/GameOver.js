@@ -63,13 +63,20 @@ class GameOver extends Component {
                 }
                 return response;
             })
+            .then(response => response.json())
             .then(data => {
-                console.log("DATA", data);
+                {this.checkData(data)}
             })
             .catch((error) => {
                 console.log(error);
                 alert("Try again :)");
             });
+    }
+
+    checkData(data) {
+        if(data.status === "Succesfully updated high scores") {
+            this.props.history.push('/');
+        } else { console.log("ei täällä"); }
     }
 
     render() {
