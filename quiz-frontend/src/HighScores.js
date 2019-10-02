@@ -37,7 +37,6 @@ class HighScores extends Component {
             })
             .then(response => response.json())
             .then(data => {
-                console.log("data",data);
                 this.setState({
                    isLoading: false,
                     allHighScore: data,
@@ -54,7 +53,6 @@ class HighScores extends Component {
 
 
     apiGetPersonalBest(jsonStr) {
-        console.log("TT");
         let urlAddress = "http://localhost:5000/api/get_personal_bests";
         fetch(urlAddress, {
             method: 'POST',
@@ -72,7 +70,6 @@ class HighScores extends Component {
             })
             .then(response => response.json())
             .then(data => {
-                console.log("PERSONAL",data);
                 this.setState({
                     personalJson: data,
                 });
@@ -116,17 +113,18 @@ class HighScores extends Component {
 
     sortJsonScores(json) {
         return json.sort(function(a,b) {
-           return a[highScore] - b[highScore];
+           return b[highScore] - a[highScore];
         });
     }
     renderHighScores() {
         let sortedJsonData = this.sortJsonScores(this.state.allHighScore);
         if(sortedJsonData) {
             return sortedJsonData.map((itm, i) => {
+                console.log("ITM", itm);
                 return(<tr key={i}>
                     <td>{i}</td>
                     <td>{itm[nickName]}</td>
-                    <td>Testi</td>
+                    <td>{itm.date}</td>
                     <td>{itm[highScore]}</td>
                 </tr>)
             });

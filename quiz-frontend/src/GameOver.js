@@ -1,6 +1,7 @@
 import React, { Component } from "react";
 import './gameover.css';
 import {nickName} from "./variables/Variables";
+import {Redirect} from "react-router-dom";
 class GameOver extends Component {
     constructor(props) {
         super(props);
@@ -13,11 +14,6 @@ class GameOver extends Component {
     }
 
     componentDidMount() {
-        console.log("DDD", this.props.location.state.score);
-    }
-
-    getContent() {
-        let sessionId = sessionStorage.getItem("session_id");
 
     }
 
@@ -25,9 +21,6 @@ class GameOver extends Component {
         this.setState({ email: event.target.value })
     }
 
-    checkIfValid() {
-        console.log("HELOO");
-    }
 
     handleChangeNickName(event) {
         this.setState({
@@ -48,7 +41,6 @@ class GameOver extends Component {
 
         let urlAddress = "http://localhost:5000/api/post_high_score_info";
         let sessionId = this.props.location.state.sessionId;
-        console.log("SESSIONID", sessionId);
         fetch(urlAddress, {
             method: 'POST',
             headers: {
@@ -68,32 +60,35 @@ class GameOver extends Component {
                 return response;
             })
             .catch((error) => {
-                console.log(error);
                 alert("Try again :)");
             });
     }
 
     render() {
+        if(sessionStorage.getItem('session_id')) {
         return (
             <div className={"overLay"}>
-                <button onClick={() => {this.goHome()}}>Back to home page</button>
+                <button className={'homepagebutton'} onClick={() => {this.goHome()}}>Back to home page</button>
                 <div className={"gameOverContent"}>
                     <h1>Game over :( </h1>
                     <br/>
-                    <p>Your score was: {this.props.location.state.score}</p>
+                    <h2>Your score was: {this.props.location.state.score}</h2>
                     <br/>
                     <p>Email: </p>
-                    <input type={'email'} name={'email'} value={this.state.email} placeholder={'Email'}
+                    <input className={'gameoverInput'} type={'email'} name={'email'} value={this.state.email} placeholder={'Email'}
                     onChange={this.handleChange}/>
                     <br/>
                     <p>Nickname: </p>
-                    <input type={'text'} name={'text'} value={this.state.nickName} placeholder={'Nickname'}
+                    <input className={'gameoverInput'} type={'text'} name={'text'} value={this.state.nickName} placeholder={'Nickname'}
                            onChange={this.handleChangeNickName}/>
                            <br/>
-                           <input onClick={() => {this.sendDataToServer()}} type={'submit'} name={'submit'} value={'submit'}/>
+                           <input className={'submitInput'} onClick={() => {this.sendDataToServer()}} type={'submit'} name={'submit'} value={'Submit'}/>
                 </div>
             </div>
         )
+        }return (<Redirect to={{
+            pathname: '/',
+        }}/>)
     }
 }
 

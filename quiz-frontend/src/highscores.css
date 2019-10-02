@@ -3,6 +3,17 @@
     -webkit-box-shadow: 0 10px 5px 0 rgba(0,0,0,0.75);
     -moz-box-shadow: 0 10px 5px 0 rgba(0,0,0,0.75);
     box-shadow: 0 10px 5px 0 rgba(0,0,0,0.75);
+    opacity: 0.85;
+    background: #eceeed;
+}
+
+.table td {
+    border-top: 1px solid #212529 !important;
+
+}
+
+.table th {
+    border-bottom: 1px solid #212529 !important;
 }
 
 .tableHeader {

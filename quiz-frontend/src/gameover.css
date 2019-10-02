@@ -3,3 +3,17 @@
     text-align: center;
 
 }
+.gameoverInput {
+    border-radius: 30px;
+    padding: 1em;
+}
+
+.submitInput {
+    margin-top: 1em;
+    padding: 0.8em;
+    border-radius: 15px;
+}
+
+.homepagebutton {
+    border-radius: 10px;
+}

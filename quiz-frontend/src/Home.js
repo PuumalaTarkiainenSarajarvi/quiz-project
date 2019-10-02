@@ -1,6 +1,7 @@
 import React, { Component } from "react"
 import {Button} from 'react-bootstrap';
 import './home.css';
+import { LinkContainer } from 'react-router-bootstrap';
 
 class Home extends Component {
     constructor(props) {
@@ -22,7 +23,13 @@ class Home extends Component {
     renderButtons() {
         return(
             <div className={"homeButtons"}>
-                <Button variant={"outline-success"} size={"lg"} block  onClick={() => {this.startGame()}}>Play</Button>
+
+                <LinkContainer to={{
+                    pathname: '/quizgame',
+                    state: { playable: true},
+                }}>
+                <Button variant={"outline-success"} size={"lg"} block>Play</Button>
+                </LinkContainer>
                 <Button variant={"outline-info"} size={"lg"} block className={"highScoresButton"} onClick={(e) => this.showHighScores(e)}>HighScores</Button>
 
             </div>
@@ -35,7 +42,7 @@ class Home extends Component {
 
     async startGame() {
         console.log("StartGamed");
-        this.props.history.push('/quizgame');
+        
 
     }
 
