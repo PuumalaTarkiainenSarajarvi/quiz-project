@@ -1,5 +1,6 @@
 import React, { Component } from "react";
 import './gameover.css';
+import {nickName} from "./variables/Variables";
 class GameOver extends Component {
     constructor(props) {
         super(props);
@@ -12,7 +13,7 @@ class GameOver extends Component {
     }
 
     componentDidMount() {
-
+        console.log("DDD", this.props.location.state.score);
     }
 
     getContent() {
@@ -33,15 +34,62 @@ class GameOver extends Component {
            nickName: event.target.value
         });
     }
+    goHome() {
+        this.props.history.push('/');
+    }
+    sendDataToServer() {
+        let body = {};
+        body['email'] = this.state.email;
+        body[nickName] = this.state.nickName;
+        this.startSendingData(body);
+    }
+
+    startSendingData(body) {
+        let urlAddress = "http://localhost:5000/api/post_high_score_info";
+        let sessionId = this.props.location.state.sessionId;
+        fetch(urlAddress, {
+            method: 'POST',
+            headers: {
+                'Accept' : 'application/json',
+                'Content-Type': 'application/json',
+                'Authorization': sessionId,
+            },
+            body: JSON.stringify(body)
+        })
+            .then(function (response) {
+                if (!response.ok) {
+                    throw Error(response.statusText);
+                }
+                return response;
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log("DATA", data);
+            })
+            .catch((error) => {
+                console.log(error);
+                alert("Try again :)");
+            });
+    }
 
     render() {
         return (
             <div className={"overLay"}>
                 <div className={"gameOverContent"}>
-                    <input type={'email'} name={'email'} value={this.state.email}
+                    <button onClick={() => {this.goHome()}}>Back to home page</button>
+                    <h1>Game over :( </h1>
+                    <br/>
+                    <p>SessionId: {this.props.location.state.sessionId}</p>
+                    <p>Your score was: {this.props.location.state.score}</p>
+                    <br/>
+                    <p>Email: </p>
+                    <input type={'email'} name={'email'} value={this.state.email} placeholder={'Email'}
                     onChange={this.handleChange}/>
-                    <input type={'text'} name={'text'} value={this.state.nickName}
+                    <br/>
+                    <p>Nickname: </p>
+                    <input type={'text'} name={'text'} value={this.state.nickName} placeholder={'Nickname'}
                            onChange={this.handleChangeNickName}/>
+                           <input onClick={() => {this.sendDataToServer()}} type={'submit'} name={'submit'} value={'submit'}/>
                 </div>
             </div>
         )

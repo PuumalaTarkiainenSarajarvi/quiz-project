@@ -221,7 +221,10 @@ class QuizGame extends Component {
             <div>
                 <h1 className={"quizH"}>Quiz Game</h1>
                 {this.getQuestionContent()}
-                <ClockForGame />
+                <ClockForGame
+                score = {this.state.points}
+                sessionId = {sessionStorage.getItem('session_id')}
+                />
                 <div className={"gameAnswerButtons"}>
                 {this.getAnswerData()}
                 </div>
