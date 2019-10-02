@@ -20,7 +20,7 @@ var app = express();
 app.use(bodyParser.json());
 app.use(cors({
     credentials: true,
-  }));
+}));
 app.use(cookieParser())
 
 
@@ -41,7 +41,7 @@ app.use(function (request, response, next) {
     response.header('X-XSS-Protection', 0);
     response.header('Access-Control-Allow-Origin', '*');
     response.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    response.header('Access-Control-Allow-Methods',  'POST, GET, PUT, OPTIONS');
+    response.header('Access-Control-Allow-Methods', 'POST, GET, PUT, OPTIONS');
     response.header('Access-Control-Allow-Credentials', 'true');
     next();
 });
@@ -83,6 +83,11 @@ function validateSessionId(session_id) {
             })
     })
 }
+
+function destroySession(session_id) {
+    db.collection(SESSION_COLLECTION).remove({ _id: new ObjectID(session_id) })
+}
+
 function updateScores(difficulty, status, session_id) {
     return new Promise(function (resolve, reject) {
         var score = 0;
@@ -111,9 +116,9 @@ function updateScores(difficulty, status, session_id) {
                 if (err) handleError(response, err.message, "Failed to get session data")
                 else if (!Number.isInteger(result.current_score)) reject("Current score is corrupted")
                 else {
-                    
+
                     var newScore = result.current_score + score
-                    if(newScore < 0) newScore = 0
+                    if (newScore < 0) newScore = 0
                     db.collection(SESSION_COLLECTION).update({ _id: new ObjectID(session_id) }, { current_score: newScore }, () => {
                         resolve(newScore)
                     })
@@ -126,7 +131,7 @@ function updateScores(difficulty, status, session_id) {
 }
 
 app.get("/api/get_all_high_scores", function (request, response) {
-    db.collection(HIGH_SCORES_COLLECTION).find({},{fields:{nickname: 1, score: 1, date:1,_id: 0}}).toArray(function (err, docs) {
+    db.collection(HIGH_SCORES_COLLECTION).find({}, { fields: { nickname: 1, score: 1, date: 1, _id: 0 } }).toArray(function (err, docs) {
         if (err) {
             handleError(response, err.message, "Failed to get high scores.");
         } else {
@@ -136,8 +141,8 @@ app.get("/api/get_all_high_scores", function (request, response) {
 });
 
 app.post("/api/start_game_session", async function (request, response) {
-    db.collection(SESSION_COLLECTION).insertOne({ 
-        _id: new ObjectID(), 
+    db.collection(SESSION_COLLECTION).insertOne({
+        _id: new ObjectID(),
         current_score: 0,
         createdAt: new Date()
     }, (err, result) => {
@@ -155,11 +160,11 @@ app.post("/api/start_game_session", async function (request, response) {
 app.post("/api/get_personal_bests", function (request, response) {
 
     let email = request.body.email;
-    if(email) {
+    if (email) {
         console.log("EMAILEMAIL", email);
         db.collection(PERSONAL_HIGH_SCORES_COLLECTION).find({ email })
             .toArray((err, result) => {
-                if(err) {
+                if (err) {
                     handleError(response, err.message, "Failed to get high score");
                 }
                 if (result.length > 0) {
@@ -172,16 +177,16 @@ app.post("/api/get_personal_bests", function (request, response) {
             })
     }
 });
-app.use(function(req,res,next){
-    if(!req.headers.authorization){
-        
+app.use(function (req, res, next) {
+    if (!req.headers.authorization) {
+
         return res.status(403).json("No authorization header")
     }
-    console.log("AUTHORIZATION HEADER",req.headers.authorization)
+    console.log("AUTHORIZATION HEADER", req.headers.authorization)
     next();
 });
 
-app.post("/api/check_correct_answer",[
+app.post("/api/check_correct_answer", [
     check('question_id').isLength({ min: 24, max: 24 }),
     check('correct_answer').isString()
 ], async function (request, response) {
@@ -217,10 +222,10 @@ app.post("/api/check_correct_answer",[
             );
         }
         else {
-            response.status(401).send({status: "Authentication failed"})
+            response.status(401).send({ status: "Authentication failed" })
         }
 
-    }).catch((error)=>{
+    }).catch((error) => {
         handleError(error)
     })
 
@@ -229,31 +234,31 @@ app.post("/api/check_correct_answer",[
 app.get("/api/get_random_question", function (request, response) {
 
     var session_id = request.headers.authorization
-        validateSessionId(session_id).then(function(data){
-            console.log("SESSION VALIDATED")
-            if(data){
-                db.collection(QUESTIONS_COLLECTION).aggregate([{ $sample: { size: 1 } }]).toArray(function (err, result) {
-                    if (err) {
-                        handleError(response, err.message, "Failed to get random question")
+    validateSessionId(session_id).then(function (data) {
+        console.log("SESSION VALIDATED")
+        if (data) {
+            db.collection(QUESTIONS_COLLECTION).aggregate([{ $sample: { size: 1 } }]).toArray(function (err, result) {
+                if (err) {
+                    handleError(response, err.message, "Failed to get random question")
+                }
+                else {
+                    let answers = [result[0].correct_answer, result[0].incorrect_answers[0], result[0].incorrect_answers[1], result[0].incorrect_answers[2]]
+                    answers = shuffle(answers)
+                    const responseData = {
+                        _id: result[0]._id,
+                        category: result[0].category,
+                        difficulty: result[0].difficulty,
+                        question: result[0].question,
+                        answers
                     }
-                    else {
-                        let answers = [result[0].correct_answer, result[0].incorrect_answers[0], result[0].incorrect_answers[1], result[0].incorrect_answers[2]]
-                        answers = shuffle(answers)
-                        const responseData = {
-                            _id: result[0]._id,
-                            category: result[0].category,
-                            difficulty: result[0].difficulty,
-                            question: result[0].question,
-                            answers
-                        }
-                        response.status(200).json(responseData)
-                    }
-                });
-            }
-        }).catch((error)=>{
-            response.status(403).send({status: "Unauthorized"})
-            handleError(error)
-        })
+                    response.status(200).json(responseData)
+                }
+            });
+        }
+    }).catch((error) => {
+        response.status(403).send({ status: "Unauthorized" })
+        handleError(error)
+    })
 });
 
 app.post("/api/post_high_score_info", [
@@ -271,27 +276,36 @@ app.post("/api/post_high_score_info", [
     var score;
 
     var getCurrentScore = new Promise((resolve, reject) => {
-        db.collection(SESSION_COLLECTION).findOne(
-            {
-                _id: new ObjectID(session_id)
-            }, function (err, result) {
-                if (err) {
-                    handleError(response, err.message, "Failed to check correct answer")
-                    reject()
+        validateSessionId(session_id).then(()=>{
+            db.collection(SESSION_COLLECTION).findOne(
+                {
+                    _id: new ObjectID(session_id)
+                }, function (err, result) {
+                    if (err) {
+                        handleError(response, err.message, "Error while attempting to find session")
+                        reject()
+                    }
+                    if (result) {
+                        score = result.current_score
+                        resolve(score)
+                    }
+                    else {
+                        reject("Session doesn't exist")
+                    }
                 }
-
-                else {
-                    score = result.current_score
-                    resolve(score)}
-            }
-        )
+            )
+        }).catch((err)=>{
+            console.log(err)
+            response.status(403).send({status: "Invalid session"})
+        })
     });
+
     getCurrentScore.then((score) => {
         db.collection(PERSONAL_HIGH_SCORES_COLLECTION).findOne({ email: email }, function (err, result) {
             if (err) {
                 handleError(err)
             }
-            else if (result != null) {          
+            else if (result != null) {
                 var smallestScore;
                 var smallestIndex;
                 if (result.tenBestScores.length == 10) {
@@ -314,20 +328,22 @@ app.post("/api/post_high_score_info", [
                         { $set: { tenBestScores: newScoreArray } }, (err, res) => {
                             if (err) handleError(err.message)
                             else {
-                                response.status(200).send({status: "Succesfully updated high scores"})
+                                response.status(200).send({ status: "Succesfully updated high scores" })
+                                db.collection(SESSION_COLLECTION).remove({ _id: new ObjectID(session_id) })
                             }
                         });
                 }
 
-                else if(result.tenBestScores.length < 10){
+                else if (result.tenBestScores.length < 10) {
                     var newScoreArray = result.tenBestScores
-                    newScoreArray.push({score: score, date: new Date()})
+                    newScoreArray.push({ score: score, date: new Date() })
                     db.collection(PERSONAL_HIGH_SCORES_COLLECTION).updateOne(
                         { email: email },
-                        { $set: { tenBestScores: newScoreArray } }, (err, res) => {
+                        { $set: { tenBestScores: newScoreArray, nickname: nickname} }, (err, res) => {
                             if (err) handleError(err.message)
                             else {
-                                response.status(200).send({status: "Succesfully inserted new high score"})
+                                response.status(200).send({ status: "Succesfully inserted new high score" })
+                                db.collection(SESSION_COLLECTION).remove({ _id: new ObjectID(session_id) })
                             }
                         });
                 }
@@ -336,7 +352,7 @@ app.post("/api/post_high_score_info", [
 
             }
             else {
-                console.log("RESULT",result)
+                console.log("RESULT", result)
                 db.collection(PERSONAL_HIGH_SCORES_COLLECTION).insertOne(
                     {
                         email: email,
@@ -346,18 +362,21 @@ app.post("/api/post_high_score_info", [
                             date: new Date()
                         }]
                     })
-                    var responseString = "Created new high scores for email "+email
-                    response.status(200).json({status: responseString})
-                    db.collection(HIGH_SCORES_COLLECTION).insertOne({
-                        nickname: nickname,
-                        score: score,
-                        date: new Date()
-                    })
+                var responseString = "Created new high scores for email " + email
+                response.status(200).json({ status: responseString })
+                
             }
         });
+    }).then(()=>{
+        db.collection(HIGH_SCORES_COLLECTION).insertOne({
+            nickname: nickname,
+            score: score,
+            date: new Date()
+        })
+        db.collection(SESSION_COLLECTION).remove({ _id: new ObjectID(session_id) })
     }).catch((err) => {
-            console.log(err)
-        });
+        console.log(err)
+    });
 
 });
 
