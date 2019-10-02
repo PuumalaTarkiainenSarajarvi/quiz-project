@@ -18,15 +18,8 @@ var SESSION_COLLECTION = "session";
 
 var app = express();
 app.use(bodyParser.json());
-<<<<<<< HEAD
-app.use(cors({
-    credentials: true,
-  }));
-app.use(cookieParser())
-=======
 app.use(cookieParser());
 app.use(cors());
->>>>>>> 7bf83631a91b6e36a1aaa4a633b66be2947547aa
 
 
 var db;
@@ -44,17 +37,10 @@ function shuffle(a) {
 
 app.use(function (request, response, next) {
     response.header('X-XSS-Protection', 0);
-<<<<<<< HEAD
-    response.header('Access-Control-Allow-Origin', '*');
-    response.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    response.header('Access-Control-Allow-Methods',  'POST, GET, PUT, OPTIONS');
-    response.header('Access-Control-Allow-Credentials', 'true');
-=======
     response.header('Access-Control-Allow-Origin', 'http://localhost:3000');
     response.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept');
     response.header('Access-Control-Allow-Methods',  'POST, GET, PUT, OPTIONS');
 
->>>>>>> 7bf83631a91b6e36a1aaa4a633b66be2947547aa
     next();
 });
 
@@ -148,7 +134,11 @@ app.get("/api/get_all_high_scores", function (request, response) {
 });
 
 app.post("/api/start_game_session", async function (request, response) {
-    db.collection(SESSION_COLLECTION).insertOne({ _id: new ObjectID(), current_score: 0 }, (err, result) => {
+    db.collection(SESSION_COLLECTION).insertOne({ 
+        _id: new ObjectID(), 
+        current_score: 0,
+        timestamp: new Date()
+    }, (err, result) => {
         if (result) {
             var dataToReturn = {
                 session_id: result.insertedId
@@ -225,7 +215,7 @@ app.post("/api/check_correct_answer",[
             );
         }
         else {
-            response.status(401).send("Authentication failed")
+            response.status(401).send({status: "Authentication failed"})
         }
 
     }).catch((error)=>{
@@ -259,7 +249,7 @@ app.get("/api/get_random_question", function (request, response) {
                 });
             }
         }).catch((error)=>{
-            response.status(403).send("Unauthorized")
+            response.status(403).send({status: "Unauthorized"})
             handleError(error)
         })
 });
@@ -324,7 +314,7 @@ app.post("/api/post_high_score_info", [
                         { $set: { tenBestScores: newScoreArray } }, (err, res) => {
                             if (err) handleError(err.message)
                             else {
-                                response.status(200).send("Succesfully updated high scores")
+                                response.status(200).send({status: "Succesfully updated high scores"})
                             }
                         });
                 }
@@ -337,7 +327,7 @@ app.post("/api/post_high_score_info", [
                         { $set: { tenBestScores: newScoreArray } }, (err, res) => {
                             if (err) handleError(err.message)
                             else {
-                                response.status(200).send("Succesfully updated high scores")
+                                response.status(200).send({status: "Succesfully inserted new high score"})
                             }
                         });
                 }
@@ -357,7 +347,7 @@ app.post("/api/post_high_score_info", [
                         }]
                     })
                     var responseString = "Created new high scores for email "+email
-                    response.status(200).json(responseString)
+                    response.status(200).json({status: responseString})
                     db.collection(HIGH_SCORES_COLLECTION).insertOne({
                         nickname: nickname,
                         score: score,
