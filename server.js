@@ -136,7 +136,11 @@ app.get("/api/get_all_high_scores", function (request, response) {
 });
 
 app.post("/api/start_game_session", async function (request, response) {
-    db.collection(SESSION_COLLECTION).insertOne({ _id: new ObjectID(), current_score: 0 }, (err, result) => {
+    db.collection(SESSION_COLLECTION).insertOne({ 
+        _id: new ObjectID(), 
+        current_score: 0,
+        timestamp: new Date()
+    }, (err, result) => {
         if (result) {
             var dataToReturn = {
                 session_id: result.insertedId
@@ -213,7 +217,7 @@ app.post("/api/check_correct_answer",[
             );
         }
         else {
-            response.status(401).send("Authentication failed")
+            response.status(401).send({status: "Authentication failed"})
         }
 
     }).catch((error)=>{
@@ -247,7 +251,7 @@ app.get("/api/get_random_question", function (request, response) {
                 });
             }
         }).catch((error)=>{
-            response.status(403).send("Unauthorized")
+            response.status(403).send({status: "Unauthorized"})
             handleError(error)
         })
 });
@@ -310,7 +314,7 @@ app.post("/api/post_high_score_info", [
                         { $set: { tenBestScores: newScoreArray } }, (err, res) => {
                             if (err) handleError(err.message)
                             else {
-                                response.status(200).send("Succesfully updated high scores")
+                                response.status(200).send({status: "Succesfully updated high scores"})
                             }
                         });
                 }
@@ -323,7 +327,7 @@ app.post("/api/post_high_score_info", [
                         { $set: { tenBestScores: newScoreArray } }, (err, res) => {
                             if (err) handleError(err.message)
                             else {
-                                response.status(200).send("Succesfully updated high scores")
+                                response.status(200).send({status: "Succesfully inserted new high score"})
                             }
                         });
                 }
@@ -343,7 +347,7 @@ app.post("/api/post_high_score_info", [
                         }]
                     })
                     var responseString = "Created new high scores for email "+email
-                    response.status(200).json(responseString)
+                    response.status(200).json({status: responseString})
                     db.collection(HIGH_SCORES_COLLECTION).insertOne({
                         nickname: nickname,
                         score: score,
