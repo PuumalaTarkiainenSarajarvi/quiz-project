@@ -45,6 +45,7 @@ class GameOver extends Component {
     }
 
     startSendingData(body) {
+
         let urlAddress = "http://localhost:5000/api/post_high_score_info";
         let sessionId = this.props.location.state.sessionId;
         fetch(urlAddress, {
@@ -62,7 +63,6 @@ class GameOver extends Component {
                 }
                 return response;
             })
-            .then(response => response.json())
             .then(data => {
                 console.log("DATA", data);
             })
@@ -75,8 +75,8 @@ class GameOver extends Component {
     render() {
         return (
             <div className={"overLay"}>
+                <button onClick={() => {this.goHome()}}>Back to home page</button>
                 <div className={"gameOverContent"}>
-                    <button onClick={() => {this.goHome()}}>Back to home page</button>
                     <h1>Game over :( </h1>
                     <br/>
                     <p>SessionId: {this.props.location.state.sessionId}</p>
@@ -89,6 +89,7 @@ class GameOver extends Component {
                     <p>Nickname: </p>
                     <input type={'text'} name={'text'} value={this.state.nickName} placeholder={'Nickname'}
                            onChange={this.handleChangeNickName}/>
+                           <br/>
                            <input onClick={() => {this.sendDataToServer()}} type={'submit'} name={'submit'} value={'submit'}/>
                 </div>
             </div>

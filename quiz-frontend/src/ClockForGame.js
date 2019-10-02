@@ -39,7 +39,7 @@ class ClockForGame extends Component {
         } else {
             return <Redirect to={{
                 pathname: '/game-over',
-                state: { score: '123', sessionId: this.props.sessionId },
+                state: { score: this.props.score, sessionId: this.props.sessionId },
 }}/>
         }
     }

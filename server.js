@@ -18,15 +18,10 @@ var SESSION_COLLECTION = "session";
 
 var app = express();
 app.use(bodyParser.json());
-<<<<<<< HEAD
 app.use(cors({
     credentials: true,
   }));
 app.use(cookieParser())
-=======
-app.use(cookieParser());
-app.use(cors());
->>>>>>> 7bf83631a91b6e36a1aaa4a633b66be2947547aa
 
 
 var db;
@@ -44,17 +39,10 @@ function shuffle(a) {
 
 app.use(function (request, response, next) {
     response.header('X-XSS-Protection', 0);
-<<<<<<< HEAD
     response.header('Access-Control-Allow-Origin', '*');
     response.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     response.header('Access-Control-Allow-Methods',  'POST, GET, PUT, OPTIONS');
     response.header('Access-Control-Allow-Credentials', 'true');
-=======
-    response.header('Access-Control-Allow-Origin', 'http://localhost:3000');
-    response.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept');
-    response.header('Access-Control-Allow-Methods',  'POST, GET, PUT, OPTIONS');
-
->>>>>>> 7bf83631a91b6e36a1aaa4a633b66be2947547aa
     next();
 });
 
@@ -273,7 +261,6 @@ app.post("/api/post_high_score_info", [
     if (!errors.isEmpty()) {
         return response.status(422).json({ errors: errors.array() })
     }
-
     var session_id = request.headers.authorization
     var email = request.body.email
     var nickname = request.body.nickname
@@ -291,8 +278,7 @@ app.post("/api/post_high_score_info", [
 
                 else {
                     score = result.current_score
-                    resolve(score)
-                }
+                    resolve(score)}
             }
         )
     });
